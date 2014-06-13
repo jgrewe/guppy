@@ -11,6 +11,7 @@
 #include "Guppy.hpp"
 #include <string>
 #include <boost/date_time/gregorian/gregorian.hpp>
+
 using namespace std;
 using namespace cv;
 
@@ -28,24 +29,26 @@ int main() {
     return -1;
   }
   int codec = CV_FOURCC('M', 'J', 'P', 'G');
-  Size frameSize(752, 580);
+  // Size frameSize(752, 580);
   VideoWriter oVideoWriter;
   namedWindow("MyVideo",CV_WINDOW_AUTOSIZE);
   Mat frame;
   bool recording = false;
   while (true) {
     bool bSuccess = cam.getFrame(frame);
+    
     if (!bSuccess) {
       cout << "Cannot read a frame from camera!!" << endl;
       break;
     }
     int key = waitKey(50);
-    if (key == 1048603) {
+    if (key % 256 == 27) {
       cout << "exit!" << endl;
       break;
     }
-    else if (key == 1048608) {
+    else if (key % 256 == 32) {
       if (!recording) {
+	Size frameSize(frame.cols, frame.rows);
 	oVideoWriter.open(getDate() + "_" + to_string(video_count) + ".avi", codec, 20, frameSize, false);
 	cout << "recording started..." << endl;
 	recording = true;
