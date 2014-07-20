@@ -16,25 +16,26 @@ using namespace cv;
 class Guppy {
 
 private:
-	VideoCapture cap;
+  VideoCapture cap;
+  bool interlaced;
 
 public:
-	Guppy(int cam_no);
+  Guppy(int cam_no, bool interlace=true);
 
-	bool isOpened() const;
+  bool isOpened() const;
 
-	bool getFrame(Mat &frame);
+  bool getFrame(Mat &frame);
 
-	void closeCam();
+  void closeCam();
 
-	void exposure(double exposure);
-	double exposure();
+  void exposure(double exposure);
+  double exposure();
 
-	void dimensions(double width=752.0, double height=580.0);
-	double frameWidth();
-	double frameHeight();
+  void dimensions(double width=752.0, double height=580.0);
+  double frameWidth();
+  double frameHeight();
 
-	virtual ~Guppy();
+  virtual ~Guppy();
 };
 
 #endif /* GUPPY_HPP_ */

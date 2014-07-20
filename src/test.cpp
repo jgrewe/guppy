@@ -30,7 +30,7 @@ int main() {
   std::string filename;
   ofstream ofs;
   boost::posix_time::ptime t1;
-  Guppy cam(0);
+  Guppy cam(0, true);
   cam.exposure(250);
   if (!cam.isOpened()) {
     cout << "Cannot open camera!" << endl;
@@ -63,9 +63,9 @@ int main() {
 	cout << "recording started..." << endl;
 	recording = true;
 	if ( !oVideoWriter.isOpened() || !ofs.is_open()) {
-	    cout << "ERROR: Failed to write the video or times" << endl;
-	    return -1;
-	  }
+	  cout << "ERROR: Failed to write the video or times" << endl;
+	  return -1;
+	}
 	video_count ++;
       } else {
 	recording = false;
