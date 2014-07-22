@@ -5,7 +5,7 @@
  *      Author: grewe
  */
 
-#include "Guppy.hpp"
+#include "guppy.hpp"
 
 using namespace cv;
 
