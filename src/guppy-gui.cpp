@@ -12,7 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <opencv2/highgui/highgui.hpp>
-#include "Guppy.hpp"
+#include "guppy.hpp"
 #include <string>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
