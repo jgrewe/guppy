@@ -12,20 +12,43 @@
 #include <iostream>
 #include <fstream>
 #include <opencv2/highgui/highgui.hpp>
-#include "guppy.hpp"
+#include "../include/guppy.hpp"
 #include <string>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+//#include <boost/program_options.hpp>
 
 using namespace std;
 using namespace cv;
+//using namespace boost;
+//namespace opt = boost::program_options;
 
 string getDate(){
   boost::gregorian::date current_date(boost::gregorian::day_clock::local_day());
   return to_iso_extended_string(current_date);
 }
-
-int main() {
+/*
+void setOptions(opt::options_description &desc) {
+  desc.add_options()
+    ("help", "produce help message")
+    ("interlaced", opt::value<bool>(), "if true converts images")
+    ("nix-io", opt::value<bool>(), "write output data to nix files")
+    ;
+}
+*/
+/*
+void readOptions(int ac, char** av[], opt::option_description &desc, opt::variables_map &vm) {
+  opt::store(opt::parse_command_line(ac, av, desc), vm);
+  opt::notify(vm);
+}
+*/
+int main(int ac, char* av[]) {
+  //opt::options_description desc("Options");
+  //setOptions(desc);
+  //opt::variables_map vm;
+  //opt::store(opt::parse_command_line(ac, av, desc, 0), vm);
+  //opt::notify(vm);
+  //readOptions(ac, av, desc, vm);
   int video_count = 0;	
   std::string filename;
   ofstream ofs;
