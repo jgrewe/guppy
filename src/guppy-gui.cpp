@@ -16,12 +16,12 @@
 #include <string>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-//#include <boost/program_options.hpp>
+#include <boost/program_options.hpp>
 
 using namespace std;
 using namespace cv;
-//using namespace boost;
-//namespace opt = boost::program_options;
+using namespace boost;
+namespace opt = boost::program_options;
 
 string getDate(){
   boost::gregorian::date current_date(boost::gregorian::day_clock::local_day());
@@ -36,24 +36,37 @@ void setOptions(opt::options_description &desc) {
     ;
 }
 */
-/*
-void readOptions(int ac, char** av[], opt::option_description &desc, opt::variables_map &vm) {
+int main(int ac, char* av[]) {
+  bool interlace = false;
+  bool nix_io = false;
+  string tag_message;
+  opt::options_description desc("Options");
+  desc.add_options()
+    ("help", "produce help")
+    ("interlaced", opt::value<bool>(&interlace)->default_value(false), "if set images are converted before writing. e.g with some fire wire cameras")
+    ("nix-io", opt::value<bool>(&nix_io)->default_value(false), "write output data to nix files")
+    ("tag-type", opt::value<string>(&tag_message)->default_value("nix.behavioral_event"), "The type of tag stored when \"t\" is pressed during recording (only applicable with nix-io)")
+    ;
+  //setOptions(desc);
+  opt::variables_map vm;
   opt::store(opt::parse_command_line(ac, av, desc), vm);
   opt::notify(vm);
-}
-*/
-int main(int ac, char* av[]) {
-  //opt::options_description desc("Options");
-  //setOptions(desc);
-  //opt::variables_map vm;
-  //opt::store(opt::parse_command_line(ac, av, desc, 0), vm);
-  //opt::notify(vm);
-  //readOptions(ac, av, desc, vm);
+  if(vm.count("help")){
+    cout << desc << "\n";
+    return 1;
+  }
+  if(vm.count("interlaced")) {
+    interlace = vm["interlaced"].as<bool>();
+  }
+  if(vm.count("nix-io")){
+    nix_io = vm["nix_io"].as<bool>();
+  }
+  
   int video_count = 0;	
   std::string filename;
   ofstream ofs;
   boost::posix_time::ptime t1;
-  Guppy cam(0, true);
+  Guppy cam(0, interlace);
   cam.exposure(250);
   if (!cam.isOpened()) {
     cout << "Cannot open camera!" << endl;
