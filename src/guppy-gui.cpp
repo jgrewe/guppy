@@ -47,21 +47,14 @@ int main(int ac, char* av[]) {
     ("nix-io", opt::value<bool>(&nix_io)->default_value(false), "write output data to nix files")
     ("tag-type", opt::value<string>(&tag_message)->default_value("nix.behavioral_event"), "The type of tag stored when \"t\" is pressed during recording (only applicable with nix-io)")
     ;
-  //setOptions(desc);
+
   opt::variables_map vm;
   opt::store(opt::parse_command_line(ac, av, desc), vm);
   opt::notify(vm);
   if(vm.count("help")){
-    cout << desc << "\n";
+    cerr << desc << "\n";
     return 1;
   }
-  if(vm.count("interlaced")) {
-    interlace = vm["interlaced"].as<bool>();
-  }
-  if(vm.count("nix-io")){
-    nix_io = vm["nix_io"].as<bool>();
-  }
-  
   int video_count = 0;	
   std::string filename;
   ofstream ofs;
@@ -69,7 +62,7 @@ int main(int ac, char* av[]) {
   Guppy cam(0, interlace);
   cam.exposure(250);
   if (!cam.isOpened()) {
-    cout << "Cannot open camera!" << endl;
+    cerr << "Cannot open camera!" << endl;
     return -1;
   }
   int codec = CV_FOURCC('M', 'J', 'P', 'G');
@@ -82,12 +75,12 @@ int main(int ac, char* av[]) {
     bool bSuccess = cam.getFrame(frame);
     t1 = boost::posix_time::microsec_clock::local_time();
     if (!bSuccess) {
-      cout << "Cannot read a frame from camera!!" << endl;
+      cerr << "Cannot read a frame from camera!!" << endl;
       break;
     }
     int key = waitKey(10);
     if (key % 256 == 27) {
-      cout << "exit!" << endl;
+      cerr << "exit!" << endl;
       break;
     }
     else if (key % 256 == 32) {
@@ -96,10 +89,10 @@ int main(int ac, char* av[]) {
 	filename = getDate() + "_" + to_string(video_count);
 	oVideoWriter.open(filename + ".avi", codec, 25, frameSize, false);
 	ofs.open(filename + "_times.dat", ofstream::out);
-	cout << "recording started..." << endl;
+	cerr << "recording started..." << endl;
 	recording = true;
 	if ( !oVideoWriter.isOpened() || !ofs.is_open()) {
-	  cout << "ERROR: Failed to write the video or times" << endl;
+	  cerr << "ERROR: Failed to write the video or times" << endl;
 	  return -1;
 	}
 	video_count ++;
@@ -108,7 +101,7 @@ int main(int ac, char* av[]) {
 	if(ofs.is_open()) {
 	  ofs.close();
 	}
-	cout << "recording stopped!" << endl;
+	cerr << "recording stopped!" << endl;
       }
     }
     if(recording && oVideoWriter.isOpened() && ofs.is_open()) {
