@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : guppy.cpp
+// Name        : guppy-gui.cpp
 // Author      : Jan Grewe
 // Version     :
 // Copyright   : Your copyright notice
@@ -23,29 +23,97 @@ using namespace cv;
 using namespace boost;
 namespace opt = boost::program_options;
 
-string getDate(){
-  boost::gregorian::date current_date(boost::gregorian::day_clock::local_day());
-  return to_iso_extended_string(current_date);
-}
-/*
-void setOptions(opt::options_description &desc) {
-  desc.add_options()
-    ("help", "produce help message")
-    ("interlaced", opt::value<bool>(), "if true converts images")
-    ("nix-io", opt::value<bool>(), "write output data to nix files")
-    ;
-}
-*/
+class movie_writer {
+public:
+  movie_writer(){};
+
+  movie_writer(const movie_writer &other):nix_io(other.nix_io), tag_type(other.tag_type), index(other.index), frame_size(other.frame_size)
+  {
+    
+  };
+
+  movie_writer(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size):nix_io(nix_io), tag_type(tag_type), index(movie_count), frame_size(frame_size) {
+    this->open();
+  };
+  
+  void create(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size) {
+    if (this->isOpen()){
+      this->close();
+    }
+    this->nix_io = nix_io;
+    this->tag_type = tag_type;
+    this->index = movie_count;
+    this->frame_size = frame_size;
+    this->open();
+  };
+
+  bool writeFrame(const Mat &frame, const boost::posix_time::ptime &time_stamp){
+    if(!this->isOpen()) {
+      return false;
+    }
+    this->oVideoWriter.write(frame);
+    this->ofs << time_stamp << endl;
+    return true;
+  };
+  
+  bool isOpen() {
+    //cerr << "isOpen video: " << oVideoWriter.isOpened() << endl;
+    //    cerr << "isOpen stream: " << this->ofs.is_open() << endl;
+    return (this->oVideoWriter.isOpened() && this->ofs.is_open());
+  };
+  
+  void close() {
+    if(this->ofs.is_open()) {
+      this->ofs.close();
+    }
+  };
+
+  ~movie_writer(){};
+private:
+  bool nix_io;
+  string tag_type;
+  int index;
+  string filename;
+  ofstream ofs; 
+  Size frame_size;
+  int codec = CV_FOURCC('M', 'J', 'P', 'G');
+  VideoWriter oVideoWriter;
+  
+  void open(){
+    this->filename = getDate() + "_" + to_string(index);
+    if(nix_io){
+      cerr << "nix_io" << endl;
+    }
+    else {
+      cerr << "open():" << this->filename << endl; 
+      cerr << this->codec << endl;
+      cerr << this->frame_size << endl;
+      this->oVideoWriter.open(this->filename + ".avi", this->codec, 25, this->frame_size, true);
+      this->ofs.open(this->filename + "_times.dat", ofstream::out);
+      cerr << "open() writer:" << this->oVideoWriter.isOpened() << endl;
+      cerr << "open() stream:" << this->ofs.is_open() << endl;
+    }
+  }
+
+  string getDate(){
+    boost::gregorian::date current_date(boost::gregorian::day_clock::local_day());
+    return to_iso_extended_string(current_date);
+  }
+    
+};
+
+
 int main(int ac, char* av[]) {
   bool interlace = false;
   bool nix_io = false;
-  string tag_message;
+  string tag_type;
+  movie_writer mv;
   opt::options_description desc("Options");
   desc.add_options()
     ("help", "produce help")
     ("interlaced", opt::value<bool>(&interlace)->default_value(false), "if set images are converted before writing. e.g with some fire wire cameras")
     ("nix-io", opt::value<bool>(&nix_io)->default_value(false), "write output data to nix files")
-    ("tag-type", opt::value<string>(&tag_message)->default_value("nix.behavioral_event"), "The type of tag stored when \"t\" is pressed during recording (only applicable with nix-io)")
+    ("tag-type", opt::value<string>(&tag_type)->default_value("nix.behavioral_event"), "The type of tag stored when \"t\" is pressed during recording (only applicable with nix-io)")
     ;
 
   opt::variables_map vm;
@@ -56,8 +124,6 @@ int main(int ac, char* av[]) {
     return 1;
   }
   int video_count = 0;	
-  std::string filename;
-  ofstream ofs;
   boost::posix_time::ptime t1;
   Guppy cam(0, interlace);
   cam.exposure(250);
@@ -65,9 +131,7 @@ int main(int ac, char* av[]) {
     cerr << "Cannot open camera!" << endl;
     return -1;
   }
-  int codec = CV_FOURCC('M', 'J', 'P', 'G');
   //Size frameSize(752, 580);
-  VideoWriter oVideoWriter;
   namedWindow("MyVideo",CV_WINDOW_AUTOSIZE);
   Mat frame;
   bool recording = false;
@@ -86,27 +150,23 @@ int main(int ac, char* av[]) {
     else if (key % 256 == 32) {
       if (!recording) {
 	Size frameSize(frame.cols, frame.rows);
-	filename = getDate() + "_" + to_string(video_count);
-	oVideoWriter.open(filename + ".avi", codec, 25, frameSize, false);
-	ofs.open(filename + "_times.dat", ofstream::out);
+	mv.create(nix_io, tag_type, video_count, frameSize);
 	cerr << "recording started..." << endl;
 	recording = true;
-	if ( !oVideoWriter.isOpened() || !ofs.is_open()) {
+	cerr << mv.isOpen() << nix_io << endl;
+	if (!mv.isOpen()) {
 	  cerr << "ERROR: Failed to write the video or times" << endl;
 	  return -1;
 	}
 	video_count ++;
       } else {
 	recording = false;
-	if(ofs.is_open()) {
-	  ofs.close();
-	}
+	mv.close();
 	cerr << "recording stopped!" << endl;
       }
     }
-    if(recording && oVideoWriter.isOpened() && ofs.is_open()) {
-      oVideoWriter.write(frame);
-      ofs << t1 << endl;
+    if(recording) {
+      mv.writeFrame(frame, t1);
     }
     imshow("MyVideo", frame); 
   }
