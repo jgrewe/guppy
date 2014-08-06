@@ -17,6 +17,7 @@
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/program_options.hpp>
+#include <nix.hpp>
 
 using namespace std;
 using namespace cv;
@@ -51,24 +52,38 @@ public:
     if(!this->isOpen()) {
       return false;
     }
-    this->oVideoWriter.write(frame);
-    this->ofs << time_stamp << endl;
+    if(nix_io) {
+      cerr << "write to nix" << endl;
+    } else {
+      this->oVideoWriter.write(frame);
+      this->ofs << time_stamp << endl;
+    }
     return true;
   };
   
   bool isOpen() {
-    //cerr << "isOpen video: " << oVideoWriter.isOpened() << endl;
-    //    cerr << "isOpen stream: " << this->ofs.is_open() << endl;
-    return (this->oVideoWriter.isOpened() && this->ofs.is_open());
+    if(this->nix_io) {
+      return this->nix_file.isOpen();
+    }
+    else {
+      return (this->oVideoWriter.isOpened() && this->ofs.is_open());
+    }
   };
   
   void close() {
-    if(this->ofs.is_open()) {
-      this->ofs.close();
+    if(this->isOpen()) {
+      if(this->nix_io) {
+	this->nix_file.close();
+      } else { 
+	if(this->ofs.is_open()) {
+	  this->ofs.close();
+	}
+      }
     }
   };
 
   ~movie_writer(){};
+
 private:
   bool nix_io;
   string tag_type;
@@ -78,20 +93,19 @@ private:
   Size frame_size;
   int codec = CV_FOURCC('M', 'J', 'P', 'G');
   VideoWriter oVideoWriter;
+  nix::File nix_file;
   
   void open(){
     this->filename = getDate() + "_" + to_string(index);
     if(nix_io){
       cerr << "nix_io" << endl;
+      nix_file = nix::File::open(this->filename + ".h5", nix::FileMode::Overwrite);
+      //TODO create a DataArray with RangeDimension for data with timestamps
+      //TODO create DataTag for tags, i.e, create DataArray with set to tag times.
     }
     else {
-      cerr << "open():" << this->filename << endl; 
-      cerr << this->codec << endl;
-      cerr << this->frame_size << endl;
       this->oVideoWriter.open(this->filename + ".avi", this->codec, 25, this->frame_size, true);
       this->ofs.open(this->filename + "_times.dat", ofstream::out);
-      cerr << "open() writer:" << this->oVideoWriter.isOpened() << endl;
-      cerr << "open() stream:" << this->ofs.is_open() << endl;
     }
   }
 
