@@ -28,16 +28,16 @@ class movie_writer {
 public:
   movie_writer(){};
 
-  movie_writer(const movie_writer &other):nix_io(other.nix_io), tag_type(other.tag_type), index(other.index), frame_size(other.frame_size)
+  movie_writer(const movie_writer &other):nix_io(other.nix_io), tag_type(other.tag_type), index(other.index), frame_size(other.frame_size), channels(other.channels)
   {
     
   };
 
-  movie_writer(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size):nix_io(nix_io), tag_type(tag_type), index(movie_count), frame_size(frame_size) {
+  movie_writer(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels=1):nix_io(nix_io), tag_type(tag_type), index(movie_count), frame_size(frame_size), channels(channels) {
     this->open();
   };
   
-  void create(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size) {
+  void create(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels=1) {
     if (this->isOpen()){
       this->close();
     }
@@ -91,20 +91,29 @@ private:
   string filename;
   ofstream ofs; 
   Size frame_size;
+  int channels;
   int codec = CV_FOURCC('M', 'J', 'P', 'G');
   VideoWriter oVideoWriter;
   nix::File nix_file;
-  
+  nix::DataArray data_array, tag_array;
+
   void open(){
     this->filename = getDate() + "_" + to_string(index);
     if(nix_io){
       cerr << "nix_io" << endl;
       nix_file = nix::File::open(this->filename + ".h5", nix::FileMode::Overwrite);
+      nix::Block recording_block = nix_file.createBlock(this->filename, "recording");
+      cerr << this->frame_size.width << "\t" << this->frame_size.height << "\t" << endl; 
+      //      data_array = recording_block.createDataArray("video", "nix.stamped_video", nix::DataType::Int, {this->framesize.} );
       //TODO create a DataArray with RangeDimension for data with timestamps
       //TODO create DataTag for tags, i.e, create DataArray with set to tag times.
     }
     else {
-      this->oVideoWriter.open(this->filename + ".avi", this->codec, 25, this->frame_size, true);
+      if(channels > 1) {
+	this->oVideoWriter.open(this->filename + ".avi", this->codec, 25, this->frame_size, true);
+      } else {
+	this->oVideoWriter.open(this->filename + ".avi", this->codec, 25, this->frame_size, false);
+      }
       this->ofs.open(this->filename + "_times.dat", ofstream::out);
     }
   }
@@ -164,10 +173,9 @@ int main(int ac, char* av[]) {
     else if (key % 256 == 32) {
       if (!recording) {
 	Size frameSize(frame.cols, frame.rows);
-	mv.create(nix_io, tag_type, video_count, frameSize);
+	mv.create(nix_io, tag_type, video_count, frameSize, frame.channels());
 	cerr << "recording started..." << endl;
 	recording = true;
-	cerr << mv.isOpen() << nix_io << endl;
 	if (!mv.isOpen()) {
 	  cerr << "ERROR: Failed to write the video or times" << endl;
 	  return -1;
