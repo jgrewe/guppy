@@ -1,6 +1,3 @@
-all: guppy gui 
-
-
 guppy: src/guppy.cpp include/guppy.hpp guppy.o
 	g++ -I/usr/include/opencv2 -I/usr/include/libboost -O0 -g3 -Wall -c -o guppy.o src/guppy.cpp -std=c++11
 
