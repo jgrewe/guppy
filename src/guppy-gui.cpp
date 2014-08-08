@@ -45,6 +45,7 @@ public:
     this->tag_type = tag_type;
     this->index = movie_count;
     this->frame_size = frame_size;
+    this->channels = channels;
     this->open();
   };
 
@@ -53,6 +54,8 @@ public:
       return false;
     }
     if(nix_io) {
+      if(this->channels > 1){
+      }
       cerr << "write to nix" << endl;
     } else {
       this->oVideoWriter.write(frame);
@@ -96,16 +99,33 @@ private:
   VideoWriter oVideoWriter;
   nix::File nix_file;
   nix::DataArray data_array, tag_array;
+  nix::RangeDimension time_dim;
+  int frame_count;
 
   void open(){
+    this->frame_count = 0;
     this->filename = getDate() + "_" + to_string(index);
     if(nix_io){
-      cerr << "nix_io" << endl;
       nix_file = nix::File::open(this->filename + ".h5", nix::FileMode::Overwrite);
       nix::Block recording_block = nix_file.createBlock(this->filename, "recording");
-      cerr << this->frame_size.width << "\t" << this->frame_size.height << "\t" << endl; 
-      //      data_array = recording_block.createDataArray("video", "nix.stamped_video", nix::DataType::Int, {this->framesize.} );
-      //TODO create a DataArray with RangeDimension for data with timestamps
+      nix::NDSize video_size{this->frame_size.height, this->frame_size.width, this->channels, 1};
+      string type = "nix.stamped_video_monochrom";
+      if(this->channels == 3) {
+	type = "nix.stamped_video_RGB";
+      }
+      data_array = recording_block.createDataArray("video", type, nix::DataType::UInt8, video_size);
+      nix::SampledDimension sd = data_array.appendSampledDimension(1.0);
+      sd.label("height");
+      sd = data_array.appendSampledDimension(1.0);
+      sd.label("width");
+      if(this->channels == 3) {
+	nix::SetDimension dim = data_array.appendSetDimension();
+	dim.labels({"R", "G", "B"});
+      }
+      time_dim = data_array.appendRangeDimension({0.0});
+      time_dim.label("time");
+      time_dim.unit("s");
+
       //TODO create DataTag for tags, i.e, create DataArray with set to tag times.
     }
     else {
@@ -147,7 +167,7 @@ int main(int ac, char* av[]) {
     return 1;
   }
   int video_count = 0;	
-  boost::posix_time::ptime t1;
+  boost::posix_time::ptime start_time, t1;
   Guppy cam(0, interlace);
   cam.exposure(250);
   if (!cam.isOpened()) {
@@ -174,6 +194,7 @@ int main(int ac, char* av[]) {
       if (!recording) {
 	Size frameSize(frame.cols, frame.rows);
 	mv.create(nix_io, tag_type, video_count, frameSize, frame.channels());
+	start_time = boost::posix_time::microsec_clock::local_time();
 	cerr << "recording started..." << endl;
 	recording = true;
 	if (!mv.isOpen()) {
@@ -188,6 +209,8 @@ int main(int ac, char* av[]) {
       }
     }
     if(recording) {
+      cerr << "start time: " << start_time << endl;
+      cerr << "\t elapsed time: " << (t1 - start_time) << endl;
       mv.writeFrame(frame, t1);
     }
     imshow("MyVideo", frame); 
