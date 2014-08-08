@@ -54,13 +54,26 @@ public:
       return false;
     }
     if(nix_io) {
+      nix::NDSize offset;
+      nix::NDSize size;
+      nix::NDSize data_size = data_array.dataExtent();
+      
       if(this->channels > 1){
+        offset = {0, 0, 0, this->frame_count};
+	size =  {this->frame_size.height, this->frame_size.width, this->channels, 1};
+	data_size[3]++;
+      } else {
+        offset = {0, 0, this->frame_count};
+	size =  {this->frame_size.height, this->frame_size.width, 1};
+	data_size[2]++;
       }
-      cerr << "write to nix" << endl;
+      data_array.dataExtent(data_size);
+      data_array.setData(nix::DataType::UInt8, frame.ptr(), size, offset);
     } else {
       this->oVideoWriter.write(frame);
       this->ofs << time_stamp << endl;
     }
+    frame_count++;
     return true;
   };
   
