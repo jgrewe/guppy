@@ -49,7 +49,7 @@ public:
     this->open();
   };
 
-  bool writeFrame(const Mat &frame, const boost::posix_time::ptime &time_stamp){
+  bool writeFrame(const Mat &frame, const boost::posix_time::time_duration &time_stamp){
     if(!this->isOpen()) {
       return false;
     }
@@ -57,7 +57,10 @@ public:
       nix::NDSize offset;
       nix::NDSize size;
       nix::NDSize data_size = data_array.dataExtent();
-      
+      //TODO polishing!!!
+      //TODO tags
+      //TODO make it own file/header...
+      //TODO Test images
       if(this->channels > 1){
         offset = {0, 0, 0, this->frame_count};
 	size =  {this->frame_size.height, this->frame_size.width, this->channels, 1};
@@ -69,6 +72,12 @@ public:
       }
       data_array.dataExtent(data_size);
       data_array.setData(nix::DataType::UInt8, frame.ptr(), size, offset);
+      vector<double> time = time_dim.ticks();
+      if(frame_count > 1) {
+	time.push_back((double)time_stamp.total_milliseconds());
+	time_dim.ticks(time);
+      }
+      cerr << time.size() << endl;
     } else {
       this->oVideoWriter.write(frame);
       this->ofs << time_stamp << endl;
@@ -137,7 +146,7 @@ private:
       }
       time_dim = data_array.appendRangeDimension({0.0});
       time_dim.label("time");
-      time_dim.unit("s");
+      time_dim.unit("ms");
 
       //TODO create DataTag for tags, i.e, create DataArray with set to tag times.
     }
@@ -181,6 +190,7 @@ int main(int ac, char* av[]) {
   }
   int video_count = 0;	
   boost::posix_time::ptime start_time, t1;
+  boost::posix_time::time_duration td;
   Guppy cam(0, interlace);
   cam.exposure(250);
   if (!cam.isOpened()) {
@@ -194,6 +204,7 @@ int main(int ac, char* av[]) {
   while (true) {
     bool bSuccess = cam.getFrame(frame);
     t1 = boost::posix_time::microsec_clock::local_time();
+    
     if (!bSuccess) {
       cerr << "Cannot read a frame from camera!!" << endl;
       break;
@@ -222,9 +233,10 @@ int main(int ac, char* av[]) {
       }
     }
     if(recording) {
+      td = t1 - start_time;
       cerr << "start time: " << start_time << endl;
-      cerr << "\t elapsed time: " << (t1 - start_time) << endl;
-      mv.writeFrame(frame, t1);
+      cerr << "\t elapsed time: " << td << endl;
+      mv.writeFrame(frame, td);
     }
     imshow("MyVideo", frame); 
   }
