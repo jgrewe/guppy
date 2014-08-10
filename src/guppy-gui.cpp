@@ -13,166 +13,23 @@
 #include <fstream>
 #include <opencv2/highgui/highgui.hpp>
 #include "../include/guppy.hpp"
+#include "../include/movieWriter.hpp"
 #include <string>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/program_options.hpp>
-#include <nix.hpp>
 
 using namespace std;
 using namespace cv;
 using namespace boost;
 namespace opt = boost::program_options;
 
-class movie_writer {
-public:
-  movie_writer(){};
-
-  movie_writer(const movie_writer &other):nix_io(other.nix_io), tag_type(other.tag_type), index(other.index), frame_size(other.frame_size), channels(other.channels)
-  {
-    
-  };
-
-  movie_writer(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels=1):nix_io(nix_io), tag_type(tag_type), index(movie_count), frame_size(frame_size), channels(channels) {
-    this->open();
-  };
-  
-  void create(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels=1) {
-    if (this->isOpen()){
-      this->close();
-    }
-    this->nix_io = nix_io;
-    this->tag_type = tag_type;
-    this->index = movie_count;
-    this->frame_size = frame_size;
-    this->channels = channels;
-    this->open();
-  };
-
-  bool writeFrame(const Mat &frame, const boost::posix_time::time_duration &time_stamp){
-    if(!this->isOpen()) {
-      return false;
-    }
-    if(nix_io) {
-      nix::NDSize offset;
-      nix::NDSize size;
-      nix::NDSize data_size = data_array.dataExtent();
-      //TODO polishing!!!
-      //TODO tags
-      //TODO make it own file/header...
-      //TODO Test images
-      if(this->channels > 1){
-        offset = {0, 0, 0, this->frame_count};
-	size =  {this->frame_size.height, this->frame_size.width, this->channels, 1};
-	data_size[3]++;
-      } else {
-        offset = {0, 0, this->frame_count};
-	size =  {this->frame_size.height, this->frame_size.width, 1};
-	data_size[2]++;
-      }
-      data_array.dataExtent(data_size);
-      data_array.setData(nix::DataType::UInt8, frame.ptr(), size, offset);
-      vector<double> time = time_dim.ticks();
-      if(frame_count > 1) {
-	time.push_back((double)time_stamp.total_milliseconds());
-	time_dim.ticks(time);
-      }
-      cerr << time.size() << endl;
-    } else {
-      this->oVideoWriter.write(frame);
-      this->ofs << time_stamp << endl;
-    }
-    frame_count++;
-    return true;
-  };
-  
-  bool isOpen() {
-    if(this->nix_io) {
-      return this->nix_file.isOpen();
-    }
-    else {
-      return (this->oVideoWriter.isOpened() && this->ofs.is_open());
-    }
-  };
-  
-  void close() {
-    if(this->isOpen()) {
-      if(this->nix_io) {
-	this->nix_file.close();
-      } else { 
-	if(this->ofs.is_open()) {
-	  this->ofs.close();
-	}
-      }
-    }
-  };
-
-  ~movie_writer(){};
-
-private:
-  bool nix_io;
-  string tag_type;
-  int index;
-  string filename;
-  ofstream ofs; 
-  Size frame_size;
-  int channels;
-  int codec = CV_FOURCC('M', 'J', 'P', 'G');
-  VideoWriter oVideoWriter;
-  nix::File nix_file;
-  nix::DataArray data_array, tag_array;
-  nix::RangeDimension time_dim;
-  int frame_count;
-
-  void open(){
-    this->frame_count = 0;
-    this->filename = getDate() + "_" + to_string(index);
-    if(nix_io){
-      nix_file = nix::File::open(this->filename + ".h5", nix::FileMode::Overwrite);
-      nix::Block recording_block = nix_file.createBlock(this->filename, "recording");
-      nix::NDSize video_size{this->frame_size.height, this->frame_size.width, this->channels, 1};
-      string type = "nix.stamped_video_monochrom";
-      if(this->channels == 3) {
-	type = "nix.stamped_video_RGB";
-      }
-      data_array = recording_block.createDataArray("video", type, nix::DataType::UInt8, video_size);
-      nix::SampledDimension sd = data_array.appendSampledDimension(1.0);
-      sd.label("height");
-      sd = data_array.appendSampledDimension(1.0);
-      sd.label("width");
-      if(this->channels == 3) {
-	nix::SetDimension dim = data_array.appendSetDimension();
-	dim.labels({"R", "G", "B"});
-      }
-      time_dim = data_array.appendRangeDimension({0.0});
-      time_dim.label("time");
-      time_dim.unit("ms");
-
-      //TODO create DataTag for tags, i.e, create DataArray with set to tag times.
-    }
-    else {
-      if(channels > 1) {
-	this->oVideoWriter.open(this->filename + ".avi", this->codec, 25, this->frame_size, true);
-      } else {
-	this->oVideoWriter.open(this->filename + ".avi", this->codec, 25, this->frame_size, false);
-      }
-      this->ofs.open(this->filename + "_times.dat", ofstream::out);
-    }
-  }
-
-  string getDate(){
-    boost::gregorian::date current_date(boost::gregorian::day_clock::local_day());
-    return to_iso_extended_string(current_date);
-  }
-    
-};
-
 
 int main(int ac, char* av[]) {
   bool interlace = false;
   bool nix_io = false;
   string tag_type;
-  movie_writer mv;
+  movieWriter mv;
   opt::options_description desc("Options");
   desc.add_options()
     ("help", "produce help")
@@ -217,9 +74,10 @@ int main(int ac, char* av[]) {
     else if (key % 256 == 32) {
       if (!recording) {
 	Size frameSize(frame.cols, frame.rows);
+	boost::posix_time::ptime c = boost::posix_time::microsec_clock::local_time();
 	mv.create(nix_io, tag_type, video_count, frameSize, frame.channels());
 	start_time = boost::posix_time::microsec_clock::local_time();
-	cerr << "recording started..." << endl;
+	cerr << "recording started..." << (start_time - c) << endl;
 	recording = true;
 	if (!mv.isOpen()) {
 	  cerr << "ERROR: Failed to write the video or times" << endl;
