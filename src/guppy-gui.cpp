@@ -26,6 +26,10 @@ namespace opt = boost::program_options;
 
 
 int main(int ac, char* av[]) {
+  int frame_count = 0;
+  int video_count = 0;	
+  posix_time::ptime frame_time, start_time;
+  posix_time::time_duration td;
   bool interlace = false;
   bool nix_io = false;
   string tag_type;
@@ -45,9 +49,6 @@ int main(int ac, char* av[]) {
     cerr << desc << "\n";
     return 1;
   }
-  int video_count = 0;	
-  boost::posix_time::ptime start_time, t1;
-  boost::posix_time::time_duration td;
   Guppy cam(0, interlace);
   cam.exposure(250);
   if (!cam.isOpened()) {
@@ -60,8 +61,7 @@ int main(int ac, char* av[]) {
   bool recording = false;
   while (true) {
     bool bSuccess = cam.getFrame(frame);
-    t1 = boost::posix_time::microsec_clock::local_time();
-    
+    frame_time = boost::posix_time::microsec_clock::local_time();
     if (!bSuccess) {
       cerr << "Cannot read a frame from camera!!" << endl;
       break;
@@ -74,10 +74,8 @@ int main(int ac, char* av[]) {
     else if (key % 256 == 32) {
       if (!recording) {
 	Size frameSize(frame.cols, frame.rows);
-	boost::posix_time::ptime c = boost::posix_time::microsec_clock::local_time();
-	mv.create(nix_io, tag_type, video_count, frameSize, frame.channels());
-	start_time = boost::posix_time::microsec_clock::local_time();
-	cerr << "recording started..." << (start_time - c) << endl;
+        mv.create(nix_io, tag_type, video_count, frameSize, frame.channels());
+	cerr << "recording started..." << endl;
 	recording = true;
 	if (!mv.isOpen()) {
 	  cerr << "ERROR: Failed to write the video or times" << endl;
@@ -89,12 +87,18 @@ int main(int ac, char* av[]) {
 	mv.close();
 	cerr << "recording stopped!" << endl;
       }
+      frame_count = 0;
+      continue;//recording starts with next frame
     }
     if(recording) {
-      td = t1 - start_time;
-      cerr << "start time: " << start_time << endl;
-      cerr << "\t elapsed time: " << td << endl;
+      if(frame_count == 0) {
+	start_time = posix_time::microsec_clock::local_time();
+	td = frame_time - frame_time;
+      } else {
+	td = frame_time - start_time;
+      }
       mv.writeFrame(frame, td);
+      frame_count++;
     }
     imshow("MyVideo", frame); 
   }

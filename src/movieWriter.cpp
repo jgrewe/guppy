@@ -46,7 +46,7 @@ bool movieWriter::writeFrame(const Mat &frame, const boost::posix_time::time_dur
     data_array.dataExtent(data_size);
     data_array.setData(nix::DataType::UInt8, frame.ptr(), size, offset);
     vector<double> time = time_dim.ticks();
-    if(frame_count > 1) {
+    if(frame_count > 0) {
       time.push_back((double)time_stamp.total_milliseconds());
       time_dim.ticks(time);
     }
