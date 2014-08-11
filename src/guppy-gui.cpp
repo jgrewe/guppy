@@ -85,6 +85,8 @@ int main(int ac, char* av[]) {
       } else {
 	recording = false;
 	mv.close();
+	cerr << "\trecorded " << frame_count << " frames in " << td.total_milliseconds()/1000. << 
+	  " seconds(" << (frame_count/(td.total_milliseconds()/1000.)) << "fps)\n";
 	cerr << "recording stopped!" << endl;
       }
       frame_count = 0;
