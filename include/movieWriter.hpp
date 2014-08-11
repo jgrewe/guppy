@@ -40,13 +40,13 @@ private:
   int index;
   string filename;
   ofstream ofs; 
-  Size frame_size;
   int channels;
   int codec = CV_FOURCC('M', 'J', 'P', 'G');
-  VideoWriter oVideoWriter;
+  VideoWriter cvWriter;
   nix::File nix_file;
-  nix::DataArray data_array, tag_array;
+  nix::DataArray video_data, tag_array;
   nix::RangeDimension time_dim;
-  int frame_count;
+  nix::NDSize frame_size, offset, data_size;
+  int frame_count, channel_index;
     
 };
