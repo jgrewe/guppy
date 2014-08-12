@@ -2,6 +2,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace cv;
 
 movieWriter::movieWriter(const movieWriter &other):nix_io(other.nix_io), tag_type(other.tag_type),
 						   index(other.index), channels(other.channels), 
