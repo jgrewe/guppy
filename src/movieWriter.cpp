@@ -1,6 +1,7 @@
 #include "../include/movieWriter.hpp"
 
 using namespace std;
+using namespace boost;
 
 movieWriter::movieWriter(const movieWriter &other):nix_io(other.nix_io), tag_type(other.tag_type),
 						   index(other.index), channels(other.channels), 
@@ -47,7 +48,7 @@ void movieWriter::create(bool nix_io, const string &tag_type, int movie_count, c
 };
 
 
-bool movieWriter::writeFrame(const Mat &frame, const boost::posix_time::time_duration &time_duration){
+bool movieWriter::writeFrame(const Mat &frame, const posix_time::time_duration &time_duration){
   if (!this->isOpen()) {
     return false;
   }
@@ -78,9 +79,9 @@ bool movieWriter::writeFrame(const Mat &frame, const boost::posix_time::time_dur
 
 void movieWriter::writeTagTimes() {
   nix::NDSize data_extent = {static_cast<int>(this->frame_size.size()), static_cast<int>(this->tag_times.size())};
-  typedef boost::multi_array<int, 2> array_type;
-  array_type position_data(boost::extents[this->frame_size.size()][this->tag_times.size()]);
-  array_type extent_data(boost::extents[this->frame_size.size()][this->tag_times.size()]);
+  typedef multi_array<int, 2> array_type;
+  array_type position_data(extents[this->frame_size.size()][this->tag_times.size()]);
+  array_type extent_data(extents[this->frame_size.size()][this->tag_times.size()]);
 
   for (size_t i = 0; i != this->tag_times.size(); ++i) {
     position_data[this->channel_index][i] = this->tag_times[i];
@@ -98,7 +99,7 @@ void movieWriter::writeTagTimes() {
 }
 
 
-void movieWriter::tag(const boost::posix_time::time_duration &time_duration) {
+void movieWriter::tag(const posix_time::time_duration &time_duration) {
   if (!nix_io) {
     cerr << "Tagging is not supported for avi output!\n";
     return;
@@ -179,7 +180,7 @@ void movieWriter::open(){
 
 
 string movieWriter::getDate() const {
-  boost::gregorian::date current_date(boost::gregorian::day_clock::local_day());
+  gregorian::date current_date(gregorian::day_clock::local_day());
   return to_iso_extended_string(current_date);
 }
  

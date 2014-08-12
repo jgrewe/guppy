@@ -6,7 +6,6 @@
 #include <nix.hpp>
 
 using namespace cv;
-using namespace boost;
 
 class movieWriter {
 
@@ -31,9 +30,9 @@ private:
 public:
   void create(bool nix_io, const std::string &tag_type, int movie_count, const Size &frame_size, int channels=1);
 
-  bool writeFrame(const Mat &frame, const posix_time::time_duration &time_stamp);
+  bool writeFrame(const Mat &frame, const boost::posix_time::time_duration &time_stamp);
 
-  void tag(const posix_time::time_duration &time_stamp);
+  void tag(const boost::posix_time::time_duration &time_stamp);
   
   bool isOpen() const;
   
