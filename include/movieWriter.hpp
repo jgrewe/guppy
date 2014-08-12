@@ -5,7 +5,6 @@
 #include <fstream>
 #include <nix.hpp>
 
-using namespace std;
 using namespace cv;
 using namespace boost;
 
@@ -16,7 +15,7 @@ public:
 
   movieWriter(const movieWriter &other);
 
-  movieWriter(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels=1);
+  movieWriter(bool nix_io, const std::string &tag_type, int movie_count, const Size &frame_size, int channels=1);
 
   ~movieWriter(){};
 
@@ -30,7 +29,7 @@ private:
   //void writeFrameTimes();
 
 public:
-  void create(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels=1);
+  void create(bool nix_io, const std::string &tag_type, int movie_count, const Size &frame_size, int channels=1);
 
   bool writeFrame(const Mat &frame, const posix_time::time_duration &time_stamp);
 
@@ -43,10 +42,10 @@ public:
 
 private:
   bool nix_io;
-  string tag_type;
+  std::string tag_type;
   int index;
-  string filename;
-  ofstream ofs; 
+  std::string filename;
+  std::ofstream ofs; 
   int channels;
   int codec = CV_FOURCC('M', 'J', 'P', 'G');
   VideoWriter cvWriter;
@@ -56,5 +55,5 @@ private:
   nix::RangeDimension time_dim;
   nix::NDSize frame_size, offset, data_size;
   int frame_count, channel_index;
-  vector<double> frame_times, tag_times;
+  std::vector<double> frame_times, tag_times;
 };
