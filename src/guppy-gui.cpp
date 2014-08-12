@@ -28,8 +28,8 @@ namespace opt = boost::program_options;
 int main(int ac, char* av[]) {
   int frame_count = 0;
   int video_count = 0;	
-  posix_time::ptime frame_time, start_time;
-  posix_time::time_duration td;
+  posix_time::ptime frame_time, start_time, tic, toc;
+  posix_time::time_duration td, td2;
   bool interlace = false;
   bool nix_io = false;
   string tag_type;
@@ -67,11 +67,10 @@ int main(int ac, char* av[]) {
       break;
     }
     int key = waitKey(10);
-    if (key % 256 == 27) {
+    if (key % 256 == 27) { // ESC to end
       cerr << "exit!" << endl;
       break;
-    }
-    else if (key % 256 == 32) {
+    } else if (key % 256 == 32) { // space to start/stop recording
       if (!recording) {
 	Size frameSize(frame.cols, frame.rows);
         mv.create(nix_io, tag_type, video_count, frameSize, frame.channels());
@@ -91,7 +90,11 @@ int main(int ac, char* av[]) {
       }
       frame_count = 0;
       continue;//recording starts with next frame
+    } else if(key % 256 == 116) { // t for tag
+      td2 = frame_time - start_time;
+      mv.tag(td2);
     }
+    
     if(recording) {
       if(frame_count == 0) {
 	start_time = posix_time::microsec_clock::local_time();
@@ -99,7 +102,10 @@ int main(int ac, char* av[]) {
       } else {
 	td = frame_time - start_time;
       }
+      //tic = posix_time::microsec_clock::local_time();
       mv.writeFrame(frame, td);
+      //toc = posix_time::microsec_clock::local_time();
+      //cerr << (toc-tic).total_milliseconds() << endl;
       frame_count++;
     }
     imshow("MyVideo", frame); 

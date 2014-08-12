@@ -7,6 +7,7 @@
 
 using namespace std;
 using namespace cv;
+using namespace boost;
 
 class movieWriter {
 
@@ -23,11 +24,17 @@ private:
   void open();
 
   string getDate() const;
+  
+  void writeTagTimes();
+  
+  //void writeFrameTimes();
 
 public:
   void create(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels=1);
 
-  bool writeFrame(const Mat &frame, const boost::posix_time::time_duration &time_stamp);
+  bool writeFrame(const Mat &frame, const posix_time::time_duration &time_stamp);
+
+  void tag(const posix_time::time_duration &time_stamp);
   
   bool isOpen() const;
   
@@ -44,9 +51,10 @@ private:
   int codec = CV_FOURCC('M', 'J', 'P', 'G');
   VideoWriter cvWriter;
   nix::File nix_file;
-  nix::DataArray video_data, tag_array;
+  nix::DataArray video_data, tag_positions, tag_extents;
+  nix::DataTag tags;
   nix::RangeDimension time_dim;
   nix::NDSize frame_size, offset, data_size;
   int frame_count, channel_index;
-    
+  vector<double> frame_times, tag_times;
 };
