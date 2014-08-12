@@ -68,6 +68,9 @@ int main(int ac, char* av[]) {
     }
     int key = waitKey(10);
     if (key % 256 == 27) { // ESC to end
+      if (recording) {
+	mv.close();
+      }
       cerr << "exit!" << endl;
       break;
     } else if (key % 256 == 32) { // space to start/stop recording
