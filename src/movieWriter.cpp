@@ -34,7 +34,7 @@ void movieWriter::create(bool nix_io, const string &tag_type, int movie_count, c
   this->tag_type = tag_type;
   this->index = movie_count;
   this->channels = channels;
-  
+  this->nix_file = nix::none;
   if (channels == 1){
     this->frame_size =  {frame_size.height, frame_size.width, 1};
     this->channel_index = 2;
@@ -58,15 +58,9 @@ bool movieWriter::writeFrame(const Mat &frame, const posix_time::time_duration &
     //TODO Test images
     //TODO metadata
     //TODO problem with repeated recordings, a nix problem?!
-    //TODO remove boost from the movieWriter
-    //TODO move using namespace things to cpp
     video_data.dataExtent(this->data_size);
     video_data.setData(nix::DataType::UInt8, frame.ptr(), this->frame_size, this->offset);
-    vector<double> time = time_dim.ticks();
-    if (frame_count > 0) {
-      time.push_back(static_cast<double>(time_duration.total_milliseconds()));
-      time_dim.ticks(time);
-    }
+    frame_times.push_back(static_cast<double>(time_duration.total_milliseconds()));
     this->offset[this->channel_index] = this->data_size[channel_index];
     this->data_size[channel_index]++;
   } else {
@@ -76,6 +70,11 @@ bool movieWriter::writeFrame(const Mat &frame, const posix_time::time_duration &
   frame_count++;
   return true;
 };
+
+
+void movieWriter::writeFrameTimes() {
+  this->time_dim.ticks(frame_times);
+}
 
 
 void movieWriter::writeTagTimes() {
@@ -121,6 +120,7 @@ bool movieWriter::isOpen() const {
 void movieWriter::close() {
   if (this->isOpen()) {
     if (this->nix_io) {
+      writeFrameTimes();
       if (this->tag_times.size() > 0){
 	writeTagTimes();
       }
@@ -139,6 +139,7 @@ void movieWriter::open(){
   this->filename = getDate() + "_" + to_string(index);
   if (nix_io){
     nix_file = nix::File::open(this->filename + ".h5", nix::FileMode::Overwrite);
+    cerr << "open file: " << filename << endl;
     nix::Block recording_block = nix_file.createBlock(this->filename, "recording");
     string type = "nix.stamped_video_monochrom";
     if (this->channels == 3) {
@@ -166,8 +167,6 @@ void movieWriter::open(){
     tags = recording_block.createDataTag("tags", this->tag_type, tag_positions);
     tags.extents(tag_extents);
     tags.addReference(video_data);
-
-
   } else {
     cv::Size size{(int)this->frame_size[1], (int)this->frame_size[0]};
     if (channels > 1) {

@@ -23,7 +23,7 @@ private:
   
   void writeTagTimes();
   
-  //void writeFrameTimes();
+  void writeFrameTimes();
 
 public:
   void create(bool nix_io, const std::string &tag_type, int movie_count, const cv::Size &frame_size, int channels=1);
