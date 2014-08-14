@@ -3,13 +3,13 @@
 using namespace std;
 using namespace boost;
 using namespace cv;
-
+/*
 movieWriter::movieWriter(const movieWriter &other):nix_io(other.nix_io), tag_type(other.tag_type),
 						   index(other.index), channels(other.channels), 
 						   frame_size(other.frame_size)
 {
 };
-
+*/
 
 movieWriter::movieWriter(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels)
   :nix_io(nix_io), tag_type(tag_type), index(movie_count), channels(channels) {
@@ -49,12 +49,73 @@ void movieWriter::create(bool nix_io, const string &tag_type, int movie_count, c
 };
 
 
+void movieWriter::open(){
+  this->frame_count = 0;
+  this->filename = getDate() + "_" + to_string(index);
+  if (nix_io){
+    nix_file = nix::File::open(this->filename + ".h5", nix::FileMode::Overwrite);
+    cerr << "open file: " << filename << endl;
+    nix::Block recording_block = nix_file.createBlock(this->filename, "recording");
+    string type = "nix.stamped_video_monochrom";
+    if (this->channels == 3) {
+      type = "nix.stamped_video_RGB";
+    }
+    video_data = recording_block.createDataArray("video", type, nix::DataType::UInt8, this->frame_size);
+    nix::SampledDimension sd = video_data.appendSampledDimension(1.0);
+    sd.label("height");
+    sd = video_data.appendSampledDimension(1.0);
+    sd.label("width");
+    if (this->channels == 3) {
+      nix::SetDimension dim = video_data.appendSetDimension();
+      dim.labels({"R", "G", "B"});
+    }
+    time_dim = video_data.appendRangeDimension({0.0});
+    time_dim.label("time");
+    time_dim.unit("ms");
+    
+    tag_positions = recording_block.createDataArray("tag times", "nix.event.positions", nix::DataType::Int64, {1, 1});
+    tag_positions.appendSetDimension();
+    
+    tag_extents = recording_block.createDataArray("tag extents", "nix.event.extents", nix::DataType::Int64, {1, 1});
+    tag_extents.appendSetDimension();
+
+    tags = recording_block.createDataTag("tags", this->tag_type, tag_positions);
+    tags.extents(tag_extents);
+    tags.addReference(video_data);
+  } else {
+    cv::Size size{(int)this->frame_size[1], (int)this->frame_size[0]};
+    if (channels > 1) {
+      this->cvWriter.open(this->filename + ".avi", this->codec, 25, size, true);
+    } else {
+      this->cvWriter.open(this->filename + ".avi", this->codec, 25, size, false);
+    }
+    this->ofs.open(this->filename + "_times.dat", ofstream::out);
+  }
+}
+
+  
+void movieWriter::close() {
+  if (this->isOpen()) {
+    if (this->nix_io) {
+      writeFrameTimes();
+      if (this->tag_times.size() > 0){
+	writeTagTimes();
+      }
+      this->nix_file.close();
+    } else { 
+      if (this->ofs.is_open()) {
+	this->ofs.close();
+      }
+    }
+  }
+}
+
+
 bool movieWriter::writeFrame(const Mat &frame, const posix_time::time_duration &time_duration){
   if (!this->isOpen()) {
     return false;
   }
   if (nix_io) {
-    //TODO polishing!!!
     //TODO Test images
     //TODO metadata
     //TODO problem with repeated recordings, a nix problem?!
@@ -113,68 +174,6 @@ bool movieWriter::isOpen() const {
     return this->nix_file.isOpen();
   } else {
     return (this->cvWriter.isOpened() && this->ofs.is_open());
-  }
-};
-
-  
-void movieWriter::close() {
-  if (this->isOpen()) {
-    if (this->nix_io) {
-      writeFrameTimes();
-      if (this->tag_times.size() > 0){
-	writeTagTimes();
-      }
-      this->nix_file.close();
-    } else { 
-      if (this->ofs.is_open()) {
-	this->ofs.close();
-      }
-    }
-  }
-};
-
-
-void movieWriter::open(){
-  this->frame_count = 0;
-  this->filename = getDate() + "_" + to_string(index);
-  if (nix_io){
-    nix_file = nix::File::open(this->filename + ".h5", nix::FileMode::Overwrite);
-    cerr << "open file: " << filename << endl;
-    nix::Block recording_block = nix_file.createBlock(this->filename, "recording");
-    string type = "nix.stamped_video_monochrom";
-    if (this->channels == 3) {
-      type = "nix.stamped_video_RGB";
-    }
-    video_data = recording_block.createDataArray("video", type, nix::DataType::UInt8, this->frame_size);
-    nix::SampledDimension sd = video_data.appendSampledDimension(1.0);
-    sd.label("height");
-    sd = video_data.appendSampledDimension(1.0);
-    sd.label("width");
-    if (this->channels == 3) {
-      nix::SetDimension dim = video_data.appendSetDimension();
-      dim.labels({"R", "G", "B"});
-    }
-    time_dim = video_data.appendRangeDimension({0.0});
-    time_dim.label("time");
-    time_dim.unit("ms");
-    
-    tag_positions = recording_block.createDataArray("tag times", "nix.event.positions", nix::DataType::Int64, {1, 1});
-    tag_positions.appendSetDimension();
-    
-    tag_extents = recording_block.createDataArray("tag extents", "nix.event.extents", nix::DataType::Int64, {1, 1});
-    tag_extents.appendSetDimension();
-
-    tags = recording_block.createDataTag("tags", this->tag_type, tag_positions);
-    tags.extents(tag_extents);
-    tags.addReference(video_data);
-  } else {
-    cv::Size size{(int)this->frame_size[1], (int)this->frame_size[0]};
-    if (channels > 1) {
-      this->cvWriter.open(this->filename + ".avi", this->codec, 25, size, true);
-    } else {
-      this->cvWriter.open(this->filename + ".avi", this->codec, 25, size, false);
-    }
-    this->ofs.open(this->filename + "_times.dat", ofstream::out);
   }
 }
 
