@@ -3,6 +3,8 @@
 using namespace std;
 using namespace boost;
 using namespace cv;
+using namespace nix;
+
 /*
   movieWriter::movieWriter(const movieWriter &other):nix_io(other.nix_io), tag_type(other.tag_type),
   index(other.index), channels(other.channels), 
@@ -53,20 +55,20 @@ void movieWriter::open(){
   frame_count = 0;
   filename = getDate() + "_" + to_string(index);
   if (use_nix){
-    nix_file = nix::File::open( filename + ".h5", nix::FileMode::Overwrite);
+    nix_file = File::open( filename + ".h5", FileMode::Overwrite);
     cerr << "open file: " << filename << endl;
-    nix::Block recording_block = nix_file.createBlock( filename, "recording");
+    Block recording_block = nix_file.createBlock( filename, "recording");
     string type = "nix.stamped_video_monochrom";
     if ( channels == 3) {
       type = "nix.stamped_video_RGB";
     }
     video_data = recording_block.createDataArray("video", type, nix::DataType::UInt8,  frame_size);
-    nix::SampledDimension sd = video_data.appendSampledDimension(1.0);
+    SampledDimension sd = video_data.appendSampledDimension(1.0);
     sd.label("height");
     sd = video_data.appendSampledDimension(1.0);
     sd.label("width");
     if ( channels == 3) {
-      nix::SetDimension dim = video_data.appendSetDimension();
+      SetDimension dim = video_data.appendSetDimension();
       dim.labels({"R", "G", "B"});
     }
     time_dim = video_data.appendRangeDimension({0.0});
@@ -139,7 +141,7 @@ void movieWriter::writeFrameTimes() {
 
 
 void movieWriter::writeTagTimes() {
-  nix::NDSize data_extent = {static_cast<int>( frame_size.size()), static_cast<int>( tag_times.size())};
+  NDSize data_extent = {static_cast<int>( frame_size.size()), static_cast<int>( tag_times.size())};
   typedef multi_array<int, 2> array_type;
   array_type position_data(extents[ frame_size.size()][ tag_times.size()]);
   array_type extent_data(extents[ frame_size.size()][ tag_times.size()]);
