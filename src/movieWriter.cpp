@@ -4,68 +4,68 @@ using namespace std;
 using namespace boost;
 using namespace cv;
 /*
-movieWriter::movieWriter(const movieWriter &other):nix_io(other.nix_io), tag_type(other.tag_type),
-						   index(other.index), channels(other.channels), 
-						   frame_size(other.frame_size)
-{
-};
+  movieWriter::movieWriter(const movieWriter &other):nix_io(other.nix_io), tag_type(other.tag_type),
+  index(other.index), channels(other.channels), 
+  frame_size(other.frame_size)
+  {
+  };
 */
 
-movieWriter::movieWriter(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels)
-  :nix_io(nix_io), tag_type(tag_type), index(movie_count), channels(channels) {
+movieWriter::movieWriter(bool nix_io, const string &tagging_type, int movie_count, const Size &image_size, int channels)
+  :use_nix(nix_io), tag_type(tagging_type), index(movie_count), channels(channels) {
   if (channels == 1){
-    this->frame_size =  {frame_size.height, frame_size.width, 1};
-    this->channel_index = 2;
-    this->offset = {0, 0, 0};
+    frame_size =  {image_size.height, image_size.width, 1};
+    channel_index = 2;
+    offset = {0, 0, 0};
   } else {
-    this->frame_size =  {frame_size.height, frame_size.width, channels, 1};
-    this->channel_index = 3;
-    this->offset = {0, 0, 0, 0};
+    frame_size =  {image_size.height, image_size.width, channels, 1};
+    channel_index = 3;
+    offset = {0, 0, 0, 0};
   }  
-  this->open();
+  open();
 };
   
 
-void movieWriter::create(bool nix_io, const string &tag_type, int movie_count, const Size &frame_size, int channels) {
-  if (this->isOpen()){
-    this->close();
+void movieWriter::create(bool nix_io, const string &tagging_type, int movie_count, const Size &image_size, int channels) {
+  if ( isOpen()){
+    close();
   }
-  this->nix_io = nix_io;
-  this->tag_type = tag_type;
-  this->index = movie_count;
-  this->channels = channels;
-  this->nix_file = nix::none;
+  use_nix = nix_io;
+  tag_type = tagging_type;
+  index = movie_count;
+  channels = channels;
+  nix_file = nix::none;
   if (channels == 1){
-    this->frame_size =  {frame_size.height, frame_size.width, 1};
-    this->channel_index = 2;
-    this->offset = {0, 0, 0};
+    frame_size =  {image_size.height, image_size.width, 1};
+    channel_index = 2;
+    offset = {0, 0, 0};
   } else {
-    this->frame_size =  {frame_size.height, frame_size.width, channels, 1};
-    this->channel_index = 3;
-    this->offset = {0, 0, 0, 0};
+    frame_size =  {image_size.height, image_size.width, channels, 1};
+    channel_index = 3;
+    offset = {0, 0, 0, 0};
   }
-  this->data_size = this->frame_size;
-  this->open();
+  data_size =  frame_size;
+  open();
 };
 
 
 void movieWriter::open(){
-  this->frame_count = 0;
-  this->filename = getDate() + "_" + to_string(index);
-  if (nix_io){
-    nix_file = nix::File::open(this->filename + ".h5", nix::FileMode::Overwrite);
+  frame_count = 0;
+  filename = getDate() + "_" + to_string(index);
+  if (use_nix){
+    nix_file = nix::File::open( filename + ".h5", nix::FileMode::Overwrite);
     cerr << "open file: " << filename << endl;
-    nix::Block recording_block = nix_file.createBlock(this->filename, "recording");
+    nix::Block recording_block = nix_file.createBlock( filename, "recording");
     string type = "nix.stamped_video_monochrom";
-    if (this->channels == 3) {
+    if ( channels == 3) {
       type = "nix.stamped_video_RGB";
     }
-    video_data = recording_block.createDataArray("video", type, nix::DataType::UInt8, this->frame_size);
+    video_data = recording_block.createDataArray("video", type, nix::DataType::UInt8,  frame_size);
     nix::SampledDimension sd = video_data.appendSampledDimension(1.0);
     sd.label("height");
     sd = video_data.appendSampledDimension(1.0);
     sd.label("width");
-    if (this->channels == 3) {
+    if ( channels == 3) {
       nix::SetDimension dim = video_data.appendSetDimension();
       dim.labels({"R", "G", "B"});
     }
@@ -79,32 +79,32 @@ void movieWriter::open(){
     tag_extents = recording_block.createDataArray("tag extents", "nix.event.extents", nix::DataType::Int64, {1, 1});
     tag_extents.appendSetDimension();
 
-    tags = recording_block.createDataTag("tags", this->tag_type, tag_positions);
+    tags = recording_block.createDataTag("tags",  tag_type, tag_positions);
     tags.extents(tag_extents);
     tags.addReference(video_data);
   } else {
-    cv::Size size{(int)this->frame_size[1], (int)this->frame_size[0]};
+    cv::Size size{(int) frame_size[1], (int) frame_size[0]};
     if (channels > 1) {
-      this->cvWriter.open(this->filename + ".avi", this->codec, 25, size, true);
+      cvWriter.open( filename + ".avi",  codec, 25, size, true);
     } else {
-      this->cvWriter.open(this->filename + ".avi", this->codec, 25, size, false);
+      cvWriter.open( filename + ".avi",  codec, 25, size, false);
     }
-    this->ofs.open(this->filename + "_times.dat", ofstream::out);
+    ofs.open( filename + "_times.dat", ofstream::out);
   }
 }
 
   
 void movieWriter::close() {
-  if (this->isOpen()) {
-    if (this->nix_io) {
+  if ( isOpen()) {
+    if ( use_nix) {
       writeFrameTimes();
-      if (this->tag_times.size() > 0){
+      if ( tag_times.size() > 0){
 	writeTagTimes();
       }
-      this->nix_file.close();
+      nix_file.close();
     } else { 
-      if (this->ofs.is_open()) {
-	this->ofs.close();
+      if ( ofs.is_open()) {
+	ofs.close();
       }
     }
   }
@@ -112,21 +112,21 @@ void movieWriter::close() {
 
 
 bool movieWriter::writeFrame(const Mat &frame, const posix_time::time_duration &time_duration){
-  if (!this->isOpen()) {
+  if (! isOpen()) {
     return false;
   }
-  if (nix_io) {
+  if (use_nix) {
     //TODO Test images
     //TODO metadata
     //TODO problem with repeated recordings, a nix problem?!
-    video_data.dataExtent(this->data_size);
-    video_data.setData(nix::DataType::UInt8, frame.ptr(), this->frame_size, this->offset);
+    video_data.dataExtent( data_size);
+    video_data.setData(nix::DataType::UInt8, frame.ptr(),  frame_size,  offset);
     frame_times.push_back(static_cast<double>(time_duration.total_milliseconds()));
-    this->offset[this->channel_index] = this->data_size[channel_index];
-    this->data_size[channel_index]++;
+    offset[ channel_index] =  data_size[channel_index];
+    data_size[channel_index]++;
   } else {
-    this->cvWriter.write(frame);
-    this->ofs << time_duration << endl;
+    cvWriter.write(frame);
+    ofs << time_duration << endl;
   }
   frame_count++;
   return true;
@@ -134,24 +134,24 @@ bool movieWriter::writeFrame(const Mat &frame, const posix_time::time_duration &
 
 
 void movieWriter::writeFrameTimes() {
-  this->time_dim.ticks(frame_times);
+  time_dim.ticks(frame_times);
 }
 
 
 void movieWriter::writeTagTimes() {
-  nix::NDSize data_extent = {static_cast<int>(this->frame_size.size()), static_cast<int>(this->tag_times.size())};
+  nix::NDSize data_extent = {static_cast<int>( frame_size.size()), static_cast<int>( tag_times.size())};
   typedef multi_array<int, 2> array_type;
-  array_type position_data(extents[this->frame_size.size()][this->tag_times.size()]);
-  array_type extent_data(extents[this->frame_size.size()][this->tag_times.size()]);
+  array_type position_data(extents[ frame_size.size()][ tag_times.size()]);
+  array_type extent_data(extents[ frame_size.size()][ tag_times.size()]);
 
-  for (size_t i = 0; i != this->tag_times.size(); ++i) {
-    position_data[this->channel_index][i] = this->tag_times[i];
+  for (size_t i = 0; i !=  tag_times.size(); ++i) {
+    position_data[ channel_index][i] =  tag_times[i];
   }
-  for (size_t i = 0; i < this->tag_times.size(); ++i) {
-    for (size_t j = 0; j < this->frame_size.size() - 1; ++j) {
-      extent_data[j][i] = this->frame_size[j];
+  for (size_t i = 0; i <  tag_times.size(); ++i) {
+    for (size_t j = 0; j <  frame_size.size() - 1; ++j) {
+      extent_data[j][i] =  frame_size[j];
     }
-    extent_data[this->channel_index][i] = 1;
+    extent_data[ channel_index][i] = 1;
   }
   tag_positions.dataExtent(data_extent);
   tag_positions.setData(position_data, {0, 0});
@@ -161,7 +161,7 @@ void movieWriter::writeTagTimes() {
 
 
 void movieWriter::tag(const posix_time::time_duration &time_duration) {
-  if (!nix_io) {
+  if (!use_nix) {
     cerr << "Tagging is not supported for avi output!\n";
     return;
   }
@@ -170,10 +170,10 @@ void movieWriter::tag(const posix_time::time_duration &time_duration) {
 
   
 bool movieWriter::isOpen() const {
-  if (this->nix_io) {
-    return this->nix_file.isOpen();
+  if ( use_nix) {
+    return  nix_file.isOpen();
   } else {
-    return (this->cvWriter.isOpened() && this->ofs.is_open());
+    return ( cvWriter.isOpened() &&  ofs.is_open());
   }
 }
 

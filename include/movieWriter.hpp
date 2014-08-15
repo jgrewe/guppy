@@ -12,7 +12,8 @@ public:
 
   //movieWriter(const movieWriter &other);
 
-  movieWriter(bool nix_io, const std::string &tag_type, int movie_count, const cv::Size &frame_size, int channels=1);
+  movieWriter(bool nix_io, const std::string &tagging_type, int movie_count, const cv::Size &image_size, 
+	      int channels=1);
 
   ~movieWriter(){};
 
@@ -26,7 +27,8 @@ private:
   void writeFrameTimes();
 
 public:
-  void create(bool nix_io, const std::string &tag_type, int movie_count, const cv::Size &frame_size, int channels=1);
+  void create(bool nix_io, const std::string &tagging_type, int movie_count, const cv::Size &image_size,
+	      int channels=1);
 
   bool writeFrame(const cv::Mat &frame, const boost::posix_time::time_duration &time_stamp);
 
@@ -38,7 +40,7 @@ public:
 
 
 private:
-  bool nix_io;
+  bool use_nix;
   std::string tag_type;
   int index;
   std::string filename;
