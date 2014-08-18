@@ -50,7 +50,7 @@ private:
   cv::VideoWriter cvWriter;
   nix::File nix_file;
   nix::DataArray video_data, tag_positions, tag_extents;
-  nix::DataTag tags;
+  nix::MultiTag tags;
   nix::RangeDimension time_dim;
   nix::NDSize frame_size, offset, data_size;
   int frame_count, channel_index;

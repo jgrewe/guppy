@@ -81,7 +81,7 @@ void movieWriter::open(){
     tag_extents = recording_block.createDataArray("tag extents", "nix.event.extents", nix::DataType::Int64, {1, 1});
     tag_extents.appendSetDimension();
 
-    tags = recording_block.createDataTag("tags",  tag_type, tag_positions);
+    tags = recording_block.createMultiTag("tags",  tag_type, tag_positions);
     tags.extents(tag_extents);
     tags.addReference(video_data);
   } else {
