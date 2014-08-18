@@ -2,9 +2,9 @@ About guppy
 ----------- 
 
 This is a small video recorder tool that stores videos grabbed from
-open CV devices either as avi of to the nix data model [See the wiki
-for more information](https://github.com/G-Node/nix).  Note: the tool
-does not record audio data. So far it is more or less a testing
+open CV devices either as avi of to the nix data model [see NIX
+project pages for details](https://github.com/G-Node/nix).  Note: the
+tool does not record audio data. So far it is more or less a testing
 platform for the nix-io. Do not expect too much!
 
 Build Dependencies
@@ -26,11 +26,15 @@ Usage
 
 After successful building call it from the command line:
 
->> ./guppy-gui
+> ./guppy-gui
+
+To call it using nix-io
+
+> ./guppy-gui --nix-io true
 
 For command line options call:
 
->> ./guppy-gui --help
+> ./guppy-gui --help
 
 When you press the space-bar the recording starts, pressing space
 again stops the recording. When using avi output (default) two files
