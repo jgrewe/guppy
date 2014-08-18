@@ -15,7 +15,7 @@ public:
   movieWriter(bool nix_io, const std::string &tagging_type, int movie_count, const cv::Size &image_size, 
 	      int channels=1);
 
-  ~movieWriter(){};
+  ~movieWriter();
 
 private:
   void open();

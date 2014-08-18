@@ -97,15 +97,15 @@ void movieWriter::open(){
 
   
 void movieWriter::close() {
-  if ( isOpen()) {
-    if ( use_nix) {
+  if (isOpen()) {
+    if (use_nix) {
       writeFrameTimes();
-      if ( tag_times.size() > 0){
+      if (tag_times.size() > 0){
 	writeTagTimes();
       }
       nix_file.close();
     } else { 
-      if ( ofs.is_open()) {
+      if (ofs.is_open()) {
 	ofs.close();
       }
     }
@@ -185,3 +185,8 @@ string movieWriter::getDate() const {
   return to_iso_extended_string(current_date);
 }
  
+movieWriter::~movieWriter(){
+  if (isOpen()) {
+    close();
+  }
+}
