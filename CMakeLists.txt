@@ -23,14 +23,15 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.49.0 REQUIRED date_time program_options)
-include_directories(${Boost_INCLUDE_DIR})
-set (LINK_LIBS ${LINK_LIBS} ${Boost_LIBRARIES})
 
+set (LINK_LIBS ${LINK_LIBS} ${Boost_LIBRARIES})
 
 ##nix
 find_package(NIX REQUIRED)
 set (LINK_LIBS ${LINK_LIBS} ${NIX_LIBRARIES})
 
+## set include dirs
+include_directories(${Boost_INCLUDE_DIR} ${NIX_INCLUDE_DIR} ${OpenCV_INCLUDE_DIR})
 add_executable( guppy-gui src/guppy-gui.cpp src/movieWriter.cpp src/guppy.cpp )
 
 target_link_libraries( guppy-gui ${LINK_LIBS})
