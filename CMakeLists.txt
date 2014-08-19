@@ -1,94 +1,36 @@
-CMAKE_MINIMUM_REQUIRED( VERSION 2.4 )
+CMAKE_MINIMUM_REQUIRED( VERSION 2.8 )
 
 PROJECT( guppy-gui )
 
-set(LIBRARY_NAME        gupppy)
-set(EXECUTABLE_NAME     guppy-gui)
+set(EXECUTABLE_NAME guppy-gui)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT} -std=c++11") ## Optimize
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O0 -g3 -Wall -c")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O0 -g3 -Wall")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+set(SRC_FILES  src/guppy.cpp)
+set(SRC_FILES  src/movieWriter.cpp)
+set(SRC_FILES  src/guppy-gui.cpp)
 
-set(SRC_FILES           ../src/guppy.cpp)
-set(INCLUDE_FILES       ../include/guppy.hpp)
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-
-SET( EXECUTABLE_OUTPUT_PATH bin )
-
-SET( LIBRARY_OUTPUT_PATH lib )
-
-#get_cmake_property(_variableNames VARIABLES)
-#foreach (_variableName ${_variableNames})
-#    message(STATUS "${_variableName}=${${_variableName}}")
-#endforeach()
+include_directories( include )
 
 ########## OpenCV  ##########
-FIND_PACKAGE( OpenCV REQUIRED )
+find_package( OpenCV REQUIRED opencv_highgui opencv_core)
 #INCLUDE( ${OpenCV_USE_FILE} )
+set (LINK_LIBS ${LINK_LIBS} ${OpenCV_LIBRARIES})
 
 ##########  BOOST  ##########
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.49.0 REQUIRED date_time)
+find_package(Boost 1.49.0 REQUIRED date_time program_options)
 include_directories(${Boost_INCLUDE_DIR})
 set (LINK_LIBS ${LINK_LIBS} ${Boost_LIBRARIES})
 
-add_executable(
-  ${EXECUTABLE_NAME}
-  ../src/guppy-gui.cpp
-  )
 
-add_library(
-  ${LIBRARY_NAME}
-  SHARED
-  ${SRC_FILES}
-  ${INCLUDE_FILES}
-  )
+##nix
+find_package(NIX REQUIRED)
+set (LINK_LIBS ${LINK_LIBS} ${NIX_LIBRARIES})
 
-target_link_libraries(
-  ${EXECUTABLE_NAME}
-  ${LIBRARY_NAME}
-  )
+add_executable( guppy-gui src/guppy-gui.cpp src/movieWriter.cpp src/guppy.cpp )
 
-target_link_libraries(
-  ${LIBRARY_NAME}
-  )
-
-#SET( EXECUTABLE_OUTPUT_PATH bin )
-
-#SET( LIBRARY_OUTPUT_PATH lib )
-
-
-#
-########### OpenCV  ##########
-#FIND_PACKAGE( OpenCV REQUIRED )
-#INCLUDE( ${OpenCV_USE_FILE} )
-
-##########  BOOST  ##########
-#set(Boost_USE_STATIC_LIBS OFF)
-#set(Boost_USE_MULTITHREADED ON)
-#set(Boost_USE_STATIC_RUNTIME OFF)
-#find_package(Boost 1.49.0 REQUIRED date_time)
-#include_directories(${Boost_INCLUDE_DIR})
-#set (LINK_LIBS ${LINK_LIBS} ${Boost_LIBRARIES})
-
-#INCLUDE_DIRECTORIES( include )
-
-#SET( lib_includes
-#  ../include/guppy.hpp
-#)
-
-#SET( lib_src
-#  ../src/guppy.cpp
-#)
-
-#SET ( exe_src
-#  ../src/guppy-gui.cpp
-#)
-
-#ADD_LIBRARY( guppy  STATIC ../src/guppy.cpp )
-#install(TARGETS guppy DESTINATION lib)
-
-#add_executable(guppy-gui ${exe_src})
-#target_link_libraries(guppy-gui guppy)
+target_link_libraries( guppy-gui ${LINK_LIBS})
