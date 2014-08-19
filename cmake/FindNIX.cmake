@@ -13,6 +13,7 @@ find_path(NIX_INCLUDE_DIR nix.hpp
 
 find_library(NIX_LIBRARY NAMES nix libnix
   HINTS ${NIX_INCLUDE_DIR}/../lib
+  HINTS ${NIX_INCLUDE_DIR}/../build
   /usr/local/lib
   /usr/lib)
 
