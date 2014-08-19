@@ -13,7 +13,7 @@ public:
   //movieWriter(const movieWriter &other);
 
   movieWriter(bool nix_io, const std::string &tagging_type, int movie_count, const cv::Size &image_size, 
-	      int channels=1);
+	      int channel_count=1);
 
   ~movieWriter();
 
@@ -28,7 +28,7 @@ private:
 
 public:
   void create(bool nix_io, const std::string &tagging_type, int movie_count, const cv::Size &image_size,
-	      int channels=1);
+	      int channel_count=1);
 
   bool writeFrame(const cv::Mat &frame, const boost::posix_time::time_duration &time_stamp);
 

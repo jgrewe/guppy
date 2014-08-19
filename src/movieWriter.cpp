@@ -13,8 +13,8 @@ using namespace nix;
   };
 */
 
-movieWriter::movieWriter(bool nix_io, const string &tagging_type, int movie_count, const Size &image_size, int channels)
-  :use_nix(nix_io), tag_type(tagging_type), index(movie_count), channels(channels) {
+movieWriter::movieWriter(bool nix_io, const string &tagging_type, int movie_count, const Size &image_size, int channel_count)
+  :use_nix(nix_io), tag_type(tagging_type), index(movie_count), channels(channel_count) {
   if (channels == 1){
     frame_size =  {image_size.height, image_size.width, 1};
     channel_index = 2;
@@ -28,14 +28,14 @@ movieWriter::movieWriter(bool nix_io, const string &tagging_type, int movie_coun
 };
   
 
-void movieWriter::create(bool nix_io, const string &tagging_type, int movie_count, const Size &image_size, int channels) {
+void movieWriter::create(bool nix_io, const string &tagging_type, int movie_count, const Size &image_size, int channel_count) {
   if ( isOpen()){
     close();
   }
   use_nix = nix_io;
   tag_type = tagging_type;
   index = movie_count;
-  channels = channels;
+  channels = channel_count;
   nix_file = nix::none;
   if (channels == 1){
     frame_size =  {image_size.height, image_size.width, 1};
@@ -57,11 +57,13 @@ void movieWriter::open(){
   if (use_nix){
     nix_file = File::open( filename + ".h5", FileMode::Overwrite);
     cerr << "open file: " << filename << endl;
+
     Block recording_block = nix_file.createBlock( filename, "recording");
     string type = "nix.stamped_video_monochrom";
     if ( channels == 3) {
       type = "nix.stamped_video_RGB";
     }
+
     video_data = recording_block.createDataArray("video", type, nix::DataType::UInt8,  frame_size);
     SampledDimension sd = video_data.appendSampledDimension(1.0);
     sd.label("height");
