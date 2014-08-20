@@ -32,6 +32,7 @@ int main(int ac, char* av[]) {
   posix_time::time_duration td, td2;
   bool interlace = false;
   bool nix_io = false;
+  int start_key = 32;
   string tag_type;
   movieWriter mv;
   opt::options_description desc("Options");
@@ -40,6 +41,7 @@ int main(int ac, char* av[]) {
     ("interlaced", opt::value<bool>(&interlace)->default_value(false), "if set images are converted before writing. e.g with some fire wire cameras")
     ("nix-io", opt::value<bool>(&nix_io)->default_value(false), "write output data to nix files")
     ("tag-type", opt::value<string>(&tag_type)->default_value("nix.behavioral_event"), "The type of tag stored when \"t\" is pressed during recording (only applicable with nix-io)")
+    ("start-key", opt::value<int>(&start_key)->default_value(32), "key code used for start/end of recording default 32 (space)")
     ;
 
   opt::variables_map vm;
@@ -73,7 +75,7 @@ int main(int ac, char* av[]) {
       }
       cerr << "exit!" << endl;
       break;
-    } else if (key % 256 == 32) { // space to start/stop recording
+    } else if (key % 256 == start_key) { // space to start/stop recording
       if (!recording) {
 	Size frameSize(frame.cols, frame.rows);
         mv.create(nix_io, tag_type, video_count, frameSize, frame.channels());
