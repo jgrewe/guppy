@@ -1,5 +1,6 @@
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/filesystem.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <fstream>
@@ -12,8 +13,8 @@ public:
 
   //movieWriter(const movieWriter &other);
 
-  movieWriter(bool nix_io, const std::string &tagging_type, int movie_count, const cv::Size &image_size, 
-	      int channel_count=1);
+  movieWriter(bool nix_io, const std::string &tagging_type, int movie_count,
+              const cv::Size &image_size, int channel_count=1);
 
   ~movieWriter();
 
@@ -21,21 +22,23 @@ private:
   void open();
 
   std::string getDate() const;
-  
+
   void writeTagTimes();
-  
+
   void writeFrameTimes();
 
+  std::string createFilename(std::string base);
+
 public:
-  void create(bool nix_io, const std::string &tagging_type, int movie_count, const cv::Size &image_size,
-	      int channel_count=1);
+  void create(bool nix_io, const std::string &tagging_type, int movie_count,
+              const cv::Size &image_size, int channel_count=1);
 
   bool writeFrame(const cv::Mat &frame, const boost::posix_time::time_duration &time_stamp);
 
   void tag(const boost::posix_time::time_duration &time_stamp);
-  
+
   bool isOpen() const;
-  
+
   void close();
 
 
@@ -44,7 +47,7 @@ private:
   std::string tag_type;
   int index;
   std::string filename;
-  std::ofstream ofs; 
+  std::ofstream ofs;
   int channels;
   int codec = CV_FOURCC('M', 'J', 'P', 'G');
   cv::VideoWriter cvWriter;
