@@ -27,7 +27,7 @@ namespace opt = boost::program_options;
 
 int main(int ac, char* av[]) {
   int frame_count = 0;
-  int video_count = 0;	
+  int video_count = 0;
   posix_time::ptime frame_time, start_time, tic, toc;
   posix_time::time_duration td, td2;
   bool interlace = false;
@@ -40,7 +40,7 @@ int main(int ac, char* av[]) {
     ("help", "produce help")
     ("interlaced", opt::value<bool>(&interlace)->default_value(false), "if set images are converted before writing. e.g with some fire wire cameras")
     ("nix-io", opt::value<bool>(&nix_io)->default_value(false), "write output data to nix files")
-    ("tag-type", opt::value<string>(&tag_type)->default_value("nix.behavioral_event"), "The type of tag stored when \"t\" is pressed during recording (only applicable with nix-io)")
+    ("tag-type", opt::value<string>(&tag_type)->default_value("nix.event.behavior"), "The type of tag stored when \"t\" is pressed during recording (only applicable with nix-io)")
     ("start-key", opt::value<int>(&start_key)->default_value(32), "key code used for start/end of recording default 32 (space)")
     ;
 
@@ -57,7 +57,7 @@ int main(int ac, char* av[]) {
     cerr << "Cannot open camera!" << endl;
     return -1;
   }
-  //Size frameSize(752, 580);
+
   namedWindow("MyVideo",CV_WINDOW_AUTOSIZE);
   Mat frame;
   bool recording = false;
@@ -89,8 +89,8 @@ int main(int ac, char* av[]) {
       } else {
 	recording = false;
 	mv.close();
-	cerr << "\trecorded " << frame_count << " frames in " << td.total_milliseconds()/1000. << 
-	  " seconds(" << (frame_count/(td.total_milliseconds()/1000.)) << "fps)\n";
+	cerr << "\trecorded " << frame_count << " frames in " << td.total_milliseconds()/1000.
+             << " seconds(" << (frame_count/(td.total_milliseconds()/1000.)) << "fps)\n";
 	cerr << "recording stopped!" << endl;
       }
       frame_count = 0;
@@ -99,7 +99,7 @@ int main(int ac, char* av[]) {
       td2 = frame_time - start_time;
       mv.tag(td2);
     }
-    
+
     if(recording) {
       if(frame_count == 0) {
 	start_time = posix_time::microsec_clock::local_time();
@@ -113,7 +113,7 @@ int main(int ac, char* av[]) {
       //cerr << (toc-tic).total_milliseconds() << endl;
       frame_count++;
     }
-    imshow("MyVideo", frame); 
+    imshow("MyVideo", frame);
   }
   cam.closeCam();
   return 0;
