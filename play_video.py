@@ -10,10 +10,17 @@ import time
 import numpy as np
 from IPython import embed
 
+def findVideoArrayID(block):
+    for a in block.data_arrays:
+        if "nix.stamped_video" in a.type:
+            return a.id
+    return None
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy playback')
     parser.add_argument('file', type=str)
-    parser.add_argument('array', type=str)
+    parser.add_argument('--array', type=str, default=None)
     parser.add_argument('--block', type=str, default=None)
     args = parser.parse_args()
 
@@ -23,7 +30,9 @@ if __name__ == '__main__':
 
     nf = nix.File.open(args.file, nix.FileMode.ReadOnly)
     block = nf.blocks[args.block or 0]
-    if not args.array in block.data_arrays:
+    if not args.array:
+        args.array = findVideoArrayID(block)
+    if not args.array or not args.array in block.data_arrays:
         print('DataArray does not exit!')
         exit()
 
