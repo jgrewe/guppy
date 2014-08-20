@@ -90,11 +90,11 @@ void movieWriter::open(){
   } else {
     cv::Size size{(int) frame_size[1], (int) frame_size[0]};
     if (channels > 1) {
-      cvWriter.open( filename + ".avi",  codec, 25, size, true);
+      cvWriter.open( filename,  codec, 25, size, true);
     } else {
-      cvWriter.open( filename + ".avi",  codec, 25, size, false);
+      cvWriter.open( filename,  codec, 25, size, false);
     }
-    ofs.open( filename + "_times.dat", ofstream::out);
+    ofs.open( filename.substr(0,filename.length()-4) + "_times.dat", ofstream::out);
   }
 }
 
