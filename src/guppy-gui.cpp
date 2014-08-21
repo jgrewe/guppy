@@ -61,14 +61,16 @@ int main(int ac, char* av[]) {
   namedWindow("MyVideo",CV_WINDOW_AUTOSIZE);
   Mat frame;
   bool recording = false;
+  bool success = true;
+  int key = -1;
   while (true) {
-    bool bSuccess = cam.getFrame(frame);
+    success = cam.getFrame(frame);
     frame_time = boost::posix_time::microsec_clock::local_time();
-    if (!bSuccess) {
+    if (!success) {
       cerr << "Cannot read a frame from camera!!" << endl;
       break;
     }
-    int key = waitKey(10);
+    key = waitKey(10);
     if (key % 256 == 27) { // ESC to end
       if (recording) {
 	mv.close();
@@ -107,10 +109,8 @@ int main(int ac, char* av[]) {
       } else {
 	td = frame_time - start_time;
       }
-      //tic = posix_time::microsec_clock::local_time();
       mv.writeFrame(frame, td);
-      //toc = posix_time::microsec_clock::local_time();
-      //cerr << (toc-tic).total_milliseconds() << endl;
+      circle(frame, Point(10,10),10, Scalar(0,0,255),CV_FILLED, 8,0);
       frame_count++;
     }
     imshow("MyVideo", frame);
