@@ -107,6 +107,13 @@ void movieWriter::close() {
 	writeTagTimes();
       }
       nix_file.close();
+      video_data = nix::none;
+      tag_positions = nix::none;
+      tag_extents = nix::none;
+      tags = nix::none;
+      time_dim = nix::none;
+      frame_times.clear();
+      tag_times.clear();
     } else {
       if (ofs.is_open()) {
 	ofs.close();
@@ -121,9 +128,7 @@ bool movieWriter::writeFrame(const Mat &frame, const posix_time::time_duration &
     return false;
   }
   if (use_nix) {
-    //TODO Test images
     //TODO metadata
-    //TODO problem with repeated recordings, a nix problem?!
     video_data.dataExtent( data_size);
     video_data.setData(nix::DataType::UInt8, frame.ptr(),  frame_size,  offset);
     frame_times.push_back(static_cast<double>(time_duration.total_milliseconds()));
