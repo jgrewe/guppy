@@ -12,14 +12,22 @@ Build Dependencies
 
 In order to build program a recent C++11 compatible compiler is needed
 (g++ 4.8 tested). Further guppy depends on the following third party
-libraries: 
+libraries:
 
+- CMake
 - openCV2
 - HDF5 (version 1.8 or higher)
-- nix 
+- nix
 - Boost
 
-Note: so far, use the Makefile to build it
+Clone the repo, change into the folder and create a 'build' directory. Change into it and execute cmake
+
+> cmake ..
+
+When cmake does not report any errors just build with
+
+> make
+
 
 Usage
 -----
@@ -44,6 +52,3 @@ uncompressed in a nix hdf5 file. When using nix, you can save the
 times of certain events by pressing "t" at any time.
 
 End the program by pressing "ESC".
-
-Note: upon restart, existing data files from the same day are
-overwritten!
