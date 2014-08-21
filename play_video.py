@@ -81,13 +81,17 @@ if __name__ == '__main__':
     tag_on = getTagFrames(ticks, tag_positions)
 
     begin = time.time()
+    tag_fader = 0
     for k in range(nframes):
         start = time.time()
         frame = da.data[:, :, :, k]
         frame = frame/256.
         if tag_on[k] == 1:
+            tag_fader = 3
             img = cv2.add(frame,tag_mask)
         else:
+            if tag_fader > 0:
+                img = cv2.add(frame, tag_mask)
             img = cv2.add(frame, no_tag_mask)
         #gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         cv2.imshow('frame', img)
