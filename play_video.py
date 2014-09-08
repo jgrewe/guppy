@@ -45,26 +45,14 @@ def getTagFrames(ticks, positions):
     return tag_on
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='guppy playback')
-    parser.add_argument('file', type=str)
-    parser.add_argument('--array', type=str, default=None)
-    parser.add_argument('--block', type=str, default=None)
-    args = parser.parse_args()
-
-    if not os.path.exists(args.file):
-        print('File does not exits!')
-        exit()
-
-    nf = nix.File.open(args.file, nix.FileMode.ReadOnly)
-    block = nf.blocks[args.block or 0]
-    if not args.array:
-        args.array = findVideoArrayID(block)
-    if not args.array or not args.array in block.data_arrays:
+def playback(block, array=None):
+    if not array:
+        array = findVideoArrayID(block)
+    if not array or not array in block.data_arrays:
         print('DataArray does not exit!')
         exit()
 
-    da = block.data_arrays[args.array]
+    da = block.data_arrays[array]
     dim = da.dimensions[-1]
     if not isinstance(dim, nix.core.RangeDimension):
         print("Expected last dimension to be a RangeDimension!")
@@ -80,7 +68,6 @@ if __name__ == '__main__':
     tag_positions = getTagPositions(block);
     tag_on = getTagFrames(ticks, tag_positions)
 
-    begin = time.time()
     tag_fader = 0
     for k in range(nframes):
         start = time.time()
@@ -98,7 +85,20 @@ if __name__ == '__main__':
         wait_interval = np.max((1, int(intervals[k] - (time.time() - start)*1000)))
         if cv2.waitKey(wait_interval) & 0xFF == ord('q'):
             break
-    done = time.time()
-    print(done-begin)
 
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='guppy playback')
+    parser.add_argument('file', type=str)
+    parser.add_argument('--array', type=str, default=None)
+    parser.add_argument('--block', type=str, default=None)
+    args = parser.parse_args()
+
+    if not os.path.exists(args.file):
+        print('File does not exits!')
+        exit()
+
+    nf = nix.File.open(args.file, nix.FileMode.ReadOnly)
+    block = nf.blocks[args.block or 0]
+    playback(block, args.array)
     cv2.destroyAllWindows()
