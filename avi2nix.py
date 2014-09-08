@@ -13,10 +13,12 @@ from IPython import embed
 
 def read_frame_times(filename):
     times_file = filename[:-4] + '_times.dat'
+    times = []
     if os.path.exists(times_file):
         with open(times_file) as f:
             for l in f.readlines():
-                print(l.rstrip())
+                times.append(float(l.rstrip()[6:]))
+        return times;
     else:
         return None
 
@@ -24,6 +26,7 @@ def read_frame_times(filename):
 def play_avi(filename):
     print(filename)
     frame_times = read_frame_times(filename)
+    print(frame_times)
 
 
 if __name__ == '__main__':
