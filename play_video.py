@@ -89,9 +89,11 @@ def playback(block, array=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy playback')
-    parser.add_argument('file', type=str)
-    parser.add_argument('--array', type=str, default=None)
-    parser.add_argument('--block', type=str, default=None)
+    parser.add_argument('file', type=str, help='the nix file containing the video')
+    parser.add_argument('-a', '--array', type=str, default=None, 
+                        help='the id of the data array, first video block will be taken if omitted')
+    parser.add_argument('-b', '--block', type=str, default=None,
+                        help='the block containing the video, fist block will be selected if omitted')
     args = parser.parse_args()
 
     if not os.path.exists(args.file):
