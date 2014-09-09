@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
-
 import nix
 import cv2
 import argparse
@@ -10,7 +9,7 @@ import time
 import numpy as np
 from IPython import embed
 
-
+    
 def read_frame_times(filename):
     times_file = filename[:-4] + '_times.dat'
     times = []
@@ -24,10 +23,30 @@ def read_frame_times(filename):
 
 
 def play_avi(filename):
-    print(filename)
     frame_times = read_frame_times(filename)
-    print(frame_times)
-
+    video = cv2.VideoCapture()
+    video.open(filename)
+    begin = time.time()
+    intervals = []
+    if frame_times:
+        intervals = np.diff(frame_times)*1000.
+        intervals = np.hstack((intervals, np.mean(intervals)))
+    else:
+        intervals.append(1000//video.get(cv2.cv.CV_CAP_PROP_FPS))
+    success, frame = video.read()
+    k = 0
+    while success:
+        start = time.time()
+        cv2.imshow('frame', frame)
+        wait_interval = np.max((1, int(intervals[k] - (time.time() - start)*1000)))
+        if cv2.waitKey(wait_interval) & 0xFF == ord('q'):
+            break
+        if frame_times:
+            k+=1
+        success, frame = video.read()
+    video.release()
+    cv2.destroyAllWindows()
+    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy avi to nix converter with tagging option')
@@ -67,25 +86,3 @@ if __name__ == '__main__':
 #    tag_positions = getTagPositions(block);
 #    tag_on = getTagFrames(ticks, tag_positions)
 
-#    begin = time.time()
-#    tag_fader = 0
-#    for k in range(nframes):
-#        start = time.time()
-#        frame = da.data[:, :, :, k]
-#        frame = frame/256.
-#        if tag_on[k] == 1:
-#           tag_fader = 3
-#           img = cv2.add(frame,tag_mask)
-#       else:
-#          if tag_fader > 0:
-#              img = cv2.add(frame, tag_mask)
-#          img = cv2.add(frame, no_tag_mask)
-#      #gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-#      cv2.imshow('frame', img)
-#      wait_interval = np.max((1, int(intervals[k] - (time.time() - start)*1000)))
-#      if cv2.waitKey(wait_interval) & 0xFF == ord('q'):
-#          break
-#  done = time.time()
-#  print(done-begin)
-
-#  cv2.destroyAllWindows()
