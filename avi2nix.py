@@ -22,7 +22,7 @@ def read_frame_times(filename):
         return None
 
 
-def play_avi(filename):
+def play_avi(filename, time_scale):
     frame_times = read_frame_times(filename)
     video = cv2.VideoCapture()
     video.open(filename)
@@ -38,7 +38,7 @@ def play_avi(filename):
     while success:
         start = time.time()
         cv2.imshow('frame', frame)
-        wait_interval = np.max((1, int(intervals[k] - (time.time() - start)*1000)))
+        wait_interval = np.max((1, int((intervals[k] - (time.time() - start) * 1000) * time_scale)))
         if cv2.waitKey(wait_interval) & 0xFF == ord('q'):
             break
         if frame_times:
@@ -53,6 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('file', type=str, help="filename of the file-to-convert")
     parser.add_argument('-g', '--gui', action="store_true", help="just converts, no display, no tagging")
     parser.add_argument('-o', '--output', type=str, default=None, help="specifies the name of the output file")
+    parser.add_argument('-s','--slow_down', type=float, default=1., help="temporal scaling")
     args = parser.parse_args()
 
     if not os.path.exists(args.file):
@@ -60,7 +61,7 @@ if __name__ == '__main__':
         exit()
     
     if args.gui:
-        play_avi(args.file)
+        play_avi(args.file, args.slow_down)
 #
 #    nf = nix.File.open(args.file, nix.FileMode.ReadOnly)
 #    block = nf.blocks[args.block or 0]
