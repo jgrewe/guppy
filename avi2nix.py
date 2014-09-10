@@ -23,6 +23,8 @@ def read_frame_times(filename):
 
 
 def play_avi(filename, time_scale):
+    start_tags = []
+    end_tags = []
     frame_times = read_frame_times(filename)
     video = cv2.VideoCapture()
     video.open(filename)
@@ -38,15 +40,25 @@ def play_avi(filename, time_scale):
     while success:
         start = time.time()
         cv2.imshow('frame', frame)
-        wait_interval = np.max((1, int((intervals[k] - (time.time() - start) * 1000) * time_scale)))
-        if cv2.waitKey(wait_interval) & 0xFF == ord('q'):
-            break
         if frame_times:
-            k+=1
+            wait_interval = np.max((1, int((intervals[k] - (time.time() - start) * 1000) * time_scale)))
+        else:
+            wait_interval = np.max((1, int((intervals[0] - (time.time() - start) * 1000) * time_scale)))
+        key = cv2.waitKey(wait_interval)
+        if key & 0xFF == ord('q'):
+            break
+        elif key & 0xFF == ord('s'):
+            print('startTag:' + str(k))
+            start_tags.append(k)
+        elif key & 0xFF == ord('e'):
+            end_tags.append(k)
+        k+=1
         success, frame = video.read()
+    
     video.release()
     cv2.destroyAllWindows()
-    
+    return start_tags, end_tags
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy avi to nix converter with tagging option')
@@ -62,7 +74,13 @@ if __name__ == '__main__':
         exit()
     
     if args.gui:
-        play_avi(args.file, args.speed)
+        start_tags, end_tags = play_avi(args.file, args.speed)
+    else:
+        start_tags = [0]
+        end_tags = [-1]
+    
+    print(zip(start_tags,end_tags))
+
 #
 #    nf = nix.File.open(args.file, nix.FileMode.ReadOnly)
 #    block = nf.blocks[args.block or 0]
