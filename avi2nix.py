@@ -124,6 +124,27 @@ def grab_frames(filename):
     return start_tags, end_tags, frame_times, frames
 
 
+def create_nix_file():
+    
+    return None
+
+
+def save_frames(frames, frame_times):
+
+    pass
+
+
+def save_tags(start_tags, end_tags, frames_times):
+
+    pass
+
+
+def nix_export(filename, start_tags, end_tags, frame_times, frames) :
+    nix_file = create_nix_file(filename)
+    save_data(frames, frame_times)
+    save_tags(start_tags, end_tags, frame_times)
+    
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy avi to nix converter with tagging option')
     parser.add_argument('file', type=str, help="filename of the file-to-convert")
@@ -141,7 +162,8 @@ if __name__ == '__main__':
     else:
         start_tags, end_tags, frame_times, frames = grab_frames(args.file)
 
-    print(zip(start_tags,end_tags))
+    export(start_tags, end_tags, frame_times, frames)
+
 
 #
 #    nf = nix.File.open(args.file, nix.FileMode.ReadOnly)
