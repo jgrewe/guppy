@@ -127,7 +127,7 @@ def grab_frames(filename):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy avi to nix converter with tagging option')
     parser.add_argument('file', type=str, help="filename of the file-to-convert")
-    parser.add_argument('-g', '--gui', action="store_true", help="just converts, no display, no tagging")
+    parser.add_argument('-g', '--gui', action="store_true", help="with video playback with the option to tag selections")
     parser.add_argument('-o', '--output', type=str, default=None, help="specifies the name of the output file")
     parser.add_argument('-s','--speed', type=float, default=1.,
                         help="playback speed given as a scaling of the original framerate e.g. 2.0 for double, 0.5 for half etc.")
