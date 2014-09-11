@@ -22,6 +22,45 @@ def read_frame_times(filename):
         return None
 
 
+def check_tags(start, end, frame_count):
+    if len(start) == 0 and len(end) == 0:
+        start.append(0)
+        end.append(frame_count)
+
+    if len(start) > len(end):
+        i = 1
+        while i < len(start):
+            if i < len(end):
+                if start[i] > end[i]:
+                    start.insert(i, end[i-1])
+                else:
+                    i +=1
+            else:
+                if i+1 < len(start):
+                    end.append(start[i+1])
+                    i +=1
+                else:
+                    end.append(frame_count)
+                    i = i + 1
+        if len(end) < len(start):
+            end.append(frame_count)
+    else:
+        i = 0
+        while i < len(end):
+            if i < len(start):
+                if end[i] < start[i] and i > 0:
+                    start.insert(i, end[i-1])
+                i += 1
+            else:
+                if i is 0:
+                    start.append(0)
+                else:
+                    start.append(end[i-1])
+                i += 1     
+    if start[-1] > end[-1]:
+        end.append(frame_count)
+    
+
 def play_avi(filename, time_scale):
     start_tags = []
     end_tags = []
@@ -48,15 +87,17 @@ def play_avi(filename, time_scale):
         if key & 0xFF == ord('q'):
             break
         elif key & 0xFF == ord('s'):
-            print('startTag:' + str(k))
             start_tags.append(k)
+            print('start: ' + str(k))
         elif key & 0xFF == ord('e'):
             end_tags.append(k)
+            print('end: ' + str(k))
         k+=1
         success, frame = video.read()
     
     video.release()
     cv2.destroyAllWindows()
+    check_tags(start_tags, end_tags, k)
     return start_tags, end_tags
 
 
