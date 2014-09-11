@@ -124,8 +124,10 @@ def grab_frames(filename):
     return start_tags, end_tags, frame_times, frames
 
 
-def create_nix_file():
-    
+def create_nix_file(file_name):
+    nix_file = nix.File.open(file_name, nix.FileMode.Overwrite)
+    block_name = file_name
+#    nix.
     return None
 
 
@@ -139,11 +141,13 @@ def save_tags(start_tags, end_tags, frames_times):
     pass
 
 
-def nix_export(filename, start_tags, end_tags, frame_times, frames) :
-    nix_file = create_nix_file(filename)
-    save_data(frames, frame_times)
+def nix_export(file_name, start_tags, end_tags, frame_times, frames) :
+    nix_file = create_nix_file(file_name)
+    save_frames(frames, frame_times)
     save_tags(start_tags, end_tags, frame_times)
-    
+    if nix_file:
+        nix_file.close()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy avi to nix converter with tagging option')
@@ -153,16 +157,27 @@ if __name__ == '__main__':
     parser.add_argument('-s','--speed', type=float, default=1.,
                         help="playback speed given as a scaling of the original framerate e.g. 2.0 for double, 0.5 for half etc.")
     args = parser.parse_args()
-
+    
     if not os.path.exists(args.file):
         print('File does not exits!')
         exit()
+    output_name = arg.output if args.output else args.file.split('.')[-2] + '.h5'
+    if os.path.exists(output_name):
+        ans = raw_input('Output file %s already exists! Overwrite? [y/n/c]: ' % output_name)
+        if ans == 'c':
+            print('\tExport cancelled!')
+            exit()
+        elif ans == 'n':
+            output_name = raw_input('Please give a new file name: ')
+            if '/' in output_name or '\\' in output_name:
+                print ('TODO: make sure the path exists!')
+        
+
     if args.gui:
         start_tags, end_tags, frame_times, frames = play_avi(args.file, args.speed)
     else:
         start_tags, end_tags, frame_times, frames = grab_frames(args.file)
-
-    export(start_tags, end_tags, frame_times, frames)
+    nix_export(output_name, start_tags, end_tags, frame_times, frames)
 
 
 #
