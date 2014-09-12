@@ -126,9 +126,9 @@ def grab_frames(filename):
 
 def create_nix_file(file_name):
     nix_file = nix.File.open(file_name, nix.FileMode.Overwrite)
-    block_name = file_name
-#    nix.
-    return None
+    block_name = file_name.split('/')[-1].split('.')[-2]
+    nix_file.create_block(block_name, 'recording')
+    return nix_file
 
 
 def save_frames(frames, frame_times):
