@@ -132,6 +132,13 @@ def create_nix_file(file_name):
 
 
 def save_frames(frames, frame_times):
+    embed()
+    exit()
+    type = "nix.stamped_video_monochrom";
+    if frames[0].shape[-1]  == 3:
+      type = "nix.stamped_video_RGB";
+    
+
 
     pass
 
