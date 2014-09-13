@@ -143,16 +143,34 @@ def create_nix_file(file_name):
     return nix_file
 
 
-    embed()
-    exit()
 def save_frames(nix_file, frames, frame_times):
-    type = "nix.stamped_video_monochrom";
+    data_type = "nix.stamped_video_monochrom";
     if frames[0].shape[-1]  == 3:
-      type = "nix.stamped_video_RGB";
-    
+      data_type = "nix.stamped_video_RGB";
+    block = nix_file.blocks[0]
 
+    video_data = block.create_data_array("video", data_type, nix.DataType.UInt8,  frames.shape);
+    sd = video_data.append_sampled_dimension(1.0);
+    sd.label = "height"
+    sd = video_data.append_sampled_dimension(1.0);
+    sd.label= "width"
+    if  frames.shape[-1] == 3:
+         dim = video_data.append_set_dimension();
+         dim.labels({"R", "G", "B"});
+    time_dim = video_data.append_range_dimension(frame_times);
+    time_dim.label = "time"
+    time_dim.unit = "ms"
 
-    pass
+    video_data.data.write_direct(frames)
+    tag_positions = block.create_data_array("tag times", "nix.event.positions", nix.DataType.Int64, (1, 1))
+    tag_positions.append_set_dimension()
+
+    tag_extents = block.create_data_array("tag extents", "nix.event.extents", nix.DataType.Int64, (1, 1))
+    tag_extents.append_set_dimension()
+
+    tags = block.create_multi_tag("tags", "nix.event", tag_positions)
+    tags.extents = tag_extents
+    tags.references.append(video_data)
 
 
 def save_tags(nix_file, start_tags, end_tags, frames_times):
@@ -163,7 +181,7 @@ def save_tags(nix_file, start_tags, end_tags, frames_times):
 def nix_export(file_name, start_tags, end_tags, frame_times, frames) :
     nix_file = create_nix_file(file_name)
     save_frames(nix_file, frames, frame_times)
-    save_tags(nix_file, start_tags, end_tags, frame_times)
+    #save_tags(nix_file, start_tags, end_tags, frame_times)
     if nix_file:
         nix_file.close()
 
@@ -182,7 +200,7 @@ if __name__ == '__main__':
         exit()
     output_name = arg.output if args.output else args.file.split('.')[-2] + '.h5'
     if os.path.exists(output_name):
-        ans = raw_input('Output file %s already exists! Overwrite? [y/n/c]: ' % output_name)
+        ans = raw_input('Output file %s already exists! Overwrite? [[y]/n/c]: ' % output_name)
         if ans == 'c':
             print('\tExport cancelled!')
             exit()
@@ -190,8 +208,7 @@ if __name__ == '__main__':
             output_name = raw_input('Please give a new file name: ')
             if '/' in output_name or '\\' in output_name:
                 print ('TODO: make sure the path exists!')
-        
-
+    
     if args.gui:
         start_tags, end_tags, frame_times, frames = play_avi(args.file, args.speed)
     else:
@@ -199,8 +216,6 @@ if __name__ == '__main__':
     nix_export(output_name, start_tags, end_tags, frame_times, frames)
 
 
-#
-#    nf = nix.File.open(args.file, nix.FileMode.ReadOnly)
 #    block = nf.blocks[args.block or 0]
 #    if not args.array:
 #        args.array = findVideoArrayID(block)
