@@ -69,16 +69,23 @@ def play_avi(filename, time_scale):
     video.open(filename)
     begin = time.time()
     intervals = []
-    frames = []
+    frames = None
     if frame_times:
         intervals = np.diff(frame_times)*1000.
         intervals = np.hstack((intervals, np.mean(intervals)))
     else:
         intervals.append(1000//video.get(cv2.cv.CV_CAP_PROP_FPS))
     success, frame = video.read()
-    frames.append(frame)
+    axis = 2
+    if success and frame.shape[-1] == 3:
+        axis = 3
     k = 0
     while success:
+        if k == 0:
+            frames = frame[...,np.newaxis]
+            print(frames.shape)
+        else:
+            frames = np.concatenate((frames, frame[...,np.newaxis]),axis=axis)
         start = time.time()
         cv2.imshow('frame', frame)
         if frame_times:
@@ -97,8 +104,7 @@ def play_avi(filename, time_scale):
             print('end: ' + str(k))
         k+=1
         success, frame = video.read()
-        frames.append(frame)
-    
+            
     video.release()
     cv2.destroyAllWindows()
     check_tags(start_tags, end_tags, k)
@@ -109,13 +115,19 @@ def grab_frames(filename):
     start_tags = [0]
     end_tags = []
     frame_times =  []
-    frames = []
+    frames = None
     video = cv2.VideoCapture(filename)
     frame_time = 1000//video.get(cv2.cv.CV_CAP_PROP_FPS)
     success, frame = video.read()
     frame_count = 0
+    axis = 2
+    if success and frame.shape[-1] == 3:
+        axis = 3
     while success:
-        frames.append(frame) 
+        if not frames:
+            frames = frame[...,np.newaxis]
+        else:
+            frames = np.concatenate((frames, frame[...,np.newaxis]),axis=axis)
         frame_times.append(frame_count * frame_time)
         frame_count += 1
         success, frame = video.read()
