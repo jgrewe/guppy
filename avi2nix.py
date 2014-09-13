@@ -131,9 +131,9 @@ def create_nix_file(file_name):
     return nix_file
 
 
-def save_frames(frames, frame_times):
     embed()
     exit()
+def save_frames(nix_file, frames, frame_times):
     type = "nix.stamped_video_monochrom";
     if frames[0].shape[-1]  == 3:
       type = "nix.stamped_video_RGB";
@@ -143,15 +143,15 @@ def save_frames(frames, frame_times):
     pass
 
 
-def save_tags(start_tags, end_tags, frames_times):
+def save_tags(nix_file, start_tags, end_tags, frames_times):
 
     pass
 
 
 def nix_export(file_name, start_tags, end_tags, frame_times, frames) :
     nix_file = create_nix_file(file_name)
-    save_frames(frames, frame_times)
-    save_tags(start_tags, end_tags, frame_times)
+    save_frames(nix_file, frames, frame_times)
+    save_tags(nix_file, start_tags, end_tags, frame_times)
     if nix_file:
         nix_file.close()
 
