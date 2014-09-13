@@ -102,7 +102,7 @@ def play_avi(filename, time_scale):
     video.release()
     cv2.destroyAllWindows()
     check_tags(start_tags, end_tags, k)
-    return start_tags, end_tags, frames, frame_times
+    return start_tags, end_tags, frame_times, frames
 
 
 def grab_frames(filename):
