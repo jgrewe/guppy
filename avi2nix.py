@@ -170,23 +170,31 @@ def save_frames(nix_file, frames, frame_times):
     tags.references.append(video_data)
 
 
-def save_tags(nix_file, start_tags, end_tags, frames_times):
+def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
     if len(start_tags) != len(end_tags):
         raise ValueError('start_tags and end_tags do not have the same number of entries!')
+        
+    if tag_rois and tag_rois.shape[-1] != len(end_tags):
+        raise ValueError('There are ROIs than there are tags!')
     block = nix_file.blocks[0]
     tags = block.multi_tags[0]
     video_size = tags.references[0].data_extent
     position_data = np.zeros((len(video_size), len(start_tags)))
     extent_data = np.zeros((len(video_size), len(start_tags)))
+
+    if not tag_rois:
+        tag_rois = np.ones((len(video_size)-1, len(start_tags)))
+        for i in range(len(start_tags)):
+            tag_rois[:,i] = video_size[:-1]
     
     for i, s_t in enumerate(start_tags):
         position_data[len(video_size) - 1][i] = frame_times[s_t]
 
     for i, (s_t, e_t) in enumerate(zip(start_tags, end_tags)):
-        for j, siz in enumerate(video_size):
+        for j, siz in enumerate(tag_rois[:, i]):
             extent_data[j][i] = siz
         extent_data[len(video_size) - 1][i] = frame_times[e_t] - frame_times[s_t]
-    
+
     tags.positions.data_extent = position_data.shape
     tags.extents.data_extent = extent_data.shape
     tags.positions.data.write_direct(position_data)
