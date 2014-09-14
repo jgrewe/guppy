@@ -83,7 +83,6 @@ def play_avi(filename, time_scale):
     while success:
         if k == 0:
             frames = frame[...,np.newaxis]
-            print(frames.shape)
         else:
             frames = np.concatenate((frames, frame[...,np.newaxis]),axis=axis)
         start = time.time()
@@ -98,10 +97,8 @@ def play_avi(filename, time_scale):
             break
         elif key & 0xFF == ord('s'):
             start_tags.append(k)
-            print('start: ' + str(k))
         elif key & 0xFF == ord('e'):
             end_tags.append(k)
-            print('end: ' + str(k))
         k+=1
         success, frame = video.read()
             
@@ -218,7 +215,7 @@ if __name__ == '__main__':
         exit()
     output_name = arg.output if args.output else args.file.split('.')[-2] + '.h5'
     if os.path.exists(output_name):
-        ans = raw_input('Output file %s already exists! Overwrite? [[y]/n/c]: ' % output_name)
+        ans = raw_input('Output file %s already exists! Overwrite? ([y]/n/c): ' % output_name)
         if ans == 'c':
             print('\tExport cancelled!')
             exit()
@@ -232,28 +229,4 @@ if __name__ == '__main__':
     else:
         start_tags, end_tags, frame_times, frames = grab_frames(args.file)
     nix_export(output_name, start_tags, end_tags, frame_times, frames)
-
-
-#    block = nf.blocks[args.block or 0]
-#    if not args.array:
-#        args.array = findVideoArrayID(block)
-#    if not args.array or not args.array in block.data_arrays:
-#        print('DataArray does not exit!')
-#        exit()#
-#
-#    da = block.data_arrays[args.array]
-#    dim = da.dimensions[-1]
-#    if not isinstance(dim, nix.core.RangeDimension):
-#        print("Expected last dimension to be a RangeDimension!")
-#        exit()
-#    ticks = dim.ticks
-#    intervals = np.diff(ticks)
-#    intervals = np.hstack((intervals, np.mean(intervals)))##
-#
-#    height, width, channels, nframes = da.data.shape##
-#
-#    tag_mask = createTagMask(height, width, channels)
-#    no_tag_mask = np.zeros((height, width, channels))
-#    tag_positions = getTagPositions(block);
-#    tag_on = getTagFrames(ticks, tag_positions)
 
