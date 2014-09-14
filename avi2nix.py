@@ -162,10 +162,10 @@ def save_frames(nix_file, frames, frame_times):
     time_dim.unit = "ms"
 
     video_data.data.write_direct(frames)
-    tag_positions = block.create_data_array("tag times", "nix.event.positions", nix.DataType.Int64, (1, 1))
+    tag_positions = block.create_data_array("tag times", "nix.event.positions", nix.DataType.Float, (1, 1))
     tag_positions.append_set_dimension()
 
-    tag_extents = block.create_data_array("tag extents", "nix.event.extents", nix.DataType.Int64, (1, 1))
+    tag_extents = block.create_data_array("tag extents", "nix.event.extents", nix.DataType.Float, (1, 1))
     tag_extents.append_set_dimension()
 
     tags = block.create_multi_tag("tags", "nix.event", tag_positions)
@@ -174,14 +174,32 @@ def save_frames(nix_file, frames, frame_times):
 
 
 def save_tags(nix_file, start_tags, end_tags, frames_times):
+    if len(start_tags) != len(end_tags):
+        raise ValueError('start_tags and end_tags do not have the same number of entries!')
+    block = nix_file.blocks[0]
+    tags = block.multi_tags[0]
+    video_size = tags.references[0].data_extent
+    position_data = np.zeros((len(video_size), len(start_tags)))
+    extent_data = np.zeros((len(video_size), len(start_tags)))
+    
+    for i, s_t in enumerate(start_tags):
+        position_data[len(video_size) - 1][i] = frame_times[s_t]
 
-    pass
+    for i, (s_t, e_t) in enumerate(zip(start_tags, end_tags)):
+        for j, siz in enumerate(video_size):
+            extent_data[j][i] = siz
+        extent_data[len(video_size) - 1][i] = frame_times[e_t] - frame_times[s_t]
+    
+    tags.positions.data_extent = position_data.shape
+    tags.extents.data_extent = extent_data.shape
+    tags.positions.data.write_direct(position_data)
+    tags.extents.data.write_direct(extent_data)
 
 
 def nix_export(file_name, start_tags, end_tags, frame_times, frames) :
     nix_file = create_nix_file(file_name)
     save_frames(nix_file, frames, frame_times)
-    #save_tags(nix_file, start_tags, end_tags, frame_times)
+    save_tags(nix_file, start_tags, end_tags, frame_times)
     if nix_file:
         nix_file.close()
 
