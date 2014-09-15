@@ -7,7 +7,6 @@ import argparse
 import os
 import time
 import numpy as np
-from IPython import embed
 
     
 def read_frame_times(filename):
@@ -237,4 +236,4 @@ if __name__ == '__main__':
     else:
         start_tags, end_tags, frame_times, frames = grab_frames(args.file)
     nix_export(output_name, start_tags, end_tags, frame_times, frames)
-
+    nix_file.close()
