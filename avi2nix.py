@@ -8,7 +8,7 @@ import os
 import time
 import numpy as np
 
-    
+
 def read_frame_times(filename):
     times_file = filename[:-4] + '_times.dat'
     times = []
@@ -55,10 +55,10 @@ def check_tags(start, end, frame_count):
                     start.append(0)
                 else:
                     start.append(end[i-1])
-                i += 1     
+                i += 1
     if start[-1] > end[-1]:
         end.append(frame_count)
-    
+
 
 def play_avi(filename, time_scale):
     start_tags = []
@@ -90,7 +90,7 @@ def play_avi(filename, time_scale):
             wait_interval = np.max((1, int((intervals[k] - (time.time() - start) * 1000) * time_scale)))
         else:
             wait_interval = np.max((1, int((intervals[0] - (time.time() - start) * 1000) * time_scale)))
-            
+
         key = cv2.waitKey(wait_interval)
         if key & 0xFF == ord('q'):
             break
@@ -100,7 +100,7 @@ def play_avi(filename, time_scale):
             end_tags.append(k)
         k+=1
         success, frame = video.read()
-            
+
     video.release()
     cv2.destroyAllWindows()
     check_tags(start_tags, end_tags, k)
@@ -155,7 +155,7 @@ def save_frames(nix_file, frames, frame_times):
         dim.labels = ["R", "G", "B"]
     time_dim = video_data.append_range_dimension(frame_times)
     time_dim.label = "time"
-    time_dim.unit = "ms"
+    time_dim.unit = "s"
 
     video_data.data.write_direct(frames)
     tag_positions = block.create_data_array("tag times", "nix.event.positions", nix.DataType.Float, (1, 1))
@@ -172,7 +172,7 @@ def save_frames(nix_file, frames, frame_times):
 def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
     if len(start_tags) != len(end_tags):
         raise ValueError('start_tags and end_tags do not have the same number of entries!')
-        
+
     if tag_rois and tag_rois.shape[-1] != len(end_tags):
         raise ValueError('There are ROIs than there are tags!')
     block = nix_file.blocks[0]
@@ -185,7 +185,7 @@ def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
         tag_rois = np.ones((len(video_size)-1, len(start_tags)))
         for i in range(len(start_tags)):
             tag_rois[:,i] = video_size[:-1]
-    
+
     for i, s_t in enumerate(start_tags):
         position_data[len(video_size) - 1][i] = frame_times[s_t]
 
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     parser.add_argument('-s','--speed', type=float, default=1.,
                         help="playback speed given as a scaling of the original framerate e.g. 2.0 for double, 0.5 for half etc.")
     args = parser.parse_args()
-    
+
     if not os.path.exists(args.file):
         print('File does not exits!')
         exit()
@@ -230,10 +230,10 @@ if __name__ == '__main__':
             output_name = raw_input('Please give a new file name: ')
             if '/' in output_name or '\\' in output_name:
                 print ('TODO: make sure the path exists!')
-    
+
     if args.gui:
         start_tags, end_tags, frame_times, frames = play_avi(args.file, args.speed)
     else:
         start_tags, end_tags, frame_times, frames = grab_frames(args.file)
     nix_export(output_name, start_tags, end_tags, frame_times, frames)
-    nix_file.close()
+
