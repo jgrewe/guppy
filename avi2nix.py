@@ -7,7 +7,7 @@ import argparse
 import os
 import time
 import numpy as np
-
+from IPython import embed
 
 def read_frame_times(filename):
     times_file = filename[:-4] + '_times.dat'
@@ -79,6 +79,9 @@ def play_avi(filename, time_scale):
     if success and frame.shape[-1] == 3:
         axis = 3
     k = 0
+    ret_times = []
+    if frame_times is not None:
+        ret_times = frame_times
     while success:
         if k == 0:
             frames = frame[...,np.newaxis]
@@ -100,11 +103,13 @@ def play_avi(filename, time_scale):
             end_tags.append(k)
         k+=1
         success, frame = video.read()
-
+    
+    if frame_times is None:
+        ret_times = np.arange(0, k)*intervals[0]
     video.release()
     cv2.destroyAllWindows()
     check_tags(start_tags, end_tags, k)
-    return start_tags, end_tags, frame_times, frames
+    return start_tags, end_tags, ret_times, frames
 
 
 def grab_frames(filename):
@@ -120,7 +125,7 @@ def grab_frames(filename):
     if success and frame.shape[-1] == 3:
         axis = 3
     while success:
-        if not frames:
+        if frames is None:
             frames = frame[...,np.newaxis]
         else:
             frames = np.concatenate((frames, frame[...,np.newaxis]),axis=axis)
@@ -153,6 +158,7 @@ def save_frames(nix_file, frames, frame_times):
     if  frames.shape[-2] == 3:
         dim = video_data.append_set_dimension()
         dim.labels = ["R", "G", "B"]
+
     time_dim = video_data.append_range_dimension(frame_times)
     time_dim.label = "time"
     time_dim.unit = "s"
