@@ -81,7 +81,7 @@ def play_avi(filename, time_scale):
     k = 0
     ret_times = []
     if frame_times is not None:
-        ret_times = frame_times
+        ret_times = frame_times*1000
     while success:
         if k == 0:
             frames = frame[...,np.newaxis]
@@ -161,7 +161,7 @@ def save_frames(nix_file, frames, frame_times):
 
     time_dim = video_data.append_range_dimension(frame_times)
     time_dim.label = "time"
-    time_dim.unit = "s"
+    time_dim.unit = "ms"
 
     video_data.data.write_direct(frames)
     tag_positions = block.create_data_array("tag times", "nix.event.positions", nix.DataType.Float, (1, 1))
