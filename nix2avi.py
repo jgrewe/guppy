@@ -18,24 +18,39 @@ def write_selections(tag, output_name):
     frame_data = frame_array.data 
     frames = np.empty(frame_data.shape)
     frame_data.read_direct(frames)
-    frame_times = frame_array.dimensions[-1].ticks
+    frame_times = np.asarray(frame_array.dimensions[-1].ticks)
     frame_rate = 1000/np.mean(np.diff(frame_times))
 
     selection = None
     for i in range(pos_data.shape[1]):
         p = pos_data[:,i]
-        e = pos_data[:,i]
-        if len(frames) == 4:
+        e = extent_data[:,i]
+        if len(frames.shape) == 4:
             selection = frames[:, :, :, (np.all((frame_times >= p[-1], frame_times < p[-1]+e[-1]), axis=0))]
-        elif len(frames) == 3:
+        elif len(frames.shape) == 3:
             selection = frames[:, :, (np.all((frame_times >= p[-1], frame_times < p[-1]+e[-1]), axis=0))]
-        filename = output_name.split('.')[-2] + '_' + str(i) + '.' +  output_name.split('.')[-1]
+        filename = output_name.split('.')[-2] + '_' + str(i) + '.avi'
         write_frames_to_avi(selection, frame_rate, filename)
 
 
 def write_frames_to_avi(frames, frame_rate, output_name):
-    print("write selection: " + output_name)
-    pass
+    print("export selection: " + output_name)
+    is_color = False
+    if len(frames.shape) == 4:
+        is_color = True
+
+    fourcc = cv.cv.CV_FOURCC(*'MP42')
+    width = frames.shape[1]
+    height = frames.shape[0]
+    writer = cv.VideoWriter(output_name, fourcc, frame_rate, (width, height), is_color)
+    for i in range(frames.shape[-1]):
+        if is_color:
+            frame = frames[:,:,:,i]
+        else:
+            frame = frames[:,:,i]
+        frame = np.asarray(frame, dtype='uint8')
+        writer.write(frame);
+    writer.release()
 
 
 def export_file(file_name, output_name):
