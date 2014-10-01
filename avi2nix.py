@@ -81,7 +81,8 @@ def play_avi(filename, time_scale):
     k = 0
     ret_times = []
     if frame_times is not None:
-        ret_times = frame_times*1000
+        ret_times = np.asarray(frame_times)*1000
+    
     while success:
         if k == 0:
             frames = frame[...,np.newaxis]
@@ -93,7 +94,7 @@ def play_avi(filename, time_scale):
             wait_interval = np.max((1, int((intervals[k] - (time.time() - start) * 1000) * time_scale)))
         else:
             wait_interval = np.max((1, int((intervals[0] - (time.time() - start) * 1000) * time_scale)))
-
+        # print(str(intervals[k]) + ' ' + str(wait_interval) + ' ' + str (time_scale) )
         key = cv2.waitKey(wait_interval)
         if key & 0xFF == ord('q'):
             break
@@ -105,7 +106,9 @@ def play_avi(filename, time_scale):
         success, frame = video.read()
     
     if frame_times is None:
-        ret_times = np.arange(0, k)*intervals[0]
+        ret_times = np.arange(0, k+1)*intervals[0]
+    else:
+        ret_times = ret_times[0:k+1]
     video.release()
     cv2.destroyAllWindows()
     check_tags(start_tags, end_tags, k)
@@ -220,7 +223,7 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--gui', action="store_true", help="with video playback with the option to tag selections")
     parser.add_argument('-o', '--output', type=str, default=None, help="specifies the name of the output file")
     parser.add_argument('-s','--speed', type=float, default=1.,
-                        help="playback speed given as a scaling of the original framerate e.g. 2.0 for double, 0.5 for half etc.")
+                        help="playback speed given as a scaling of the original frame timing e.g. 2.0 for double (slow motion), 0.5 for half etc.")
     args = parser.parse_args()
 
     if not os.path.exists(args.file):
