@@ -140,10 +140,35 @@ def grab_frames(filename):
     return start_tags, end_tags, frame_times, frames
 
 
-def create_nix_file(file_name):
+def create_nix_file(file_name, frame_size, data_type="nix.stamped_video"):
     nix_file = nix.File.open(file_name, nix.FileMode.Overwrite)
     block_name = file_name.split('/')[-1].split('.')[-2]
-    nix_file.create_block(block_name, 'recording')
+    block = nix_file.create_block(block_name, 'recording')
+
+    video_data = block.create_data_array("video", data_type, nix.DataType.UInt8, frame_size)
+    sd = video_data.append_sampled_dimension(1.0)
+    sd.label = "width"
+    sd = video_data.append_sampled_dimension(1.0)
+    sd.label = "height"
+
+    if frame_size[-1] == 3:
+        dim = video_data.append_set_dimension()
+        dim.labels = ["R", "G", "B"]
+    else:
+        print("warning: unknown channel labels!")
+    time_dim = video_data.append_range_dimension([0.0])
+    time_dim.label = "time"
+    time_dim.unit = "ms"
+
+    tag_positions = block.create_data_array("tag times", "nix.event.positions", nix.DataType.Float, (1, 1))
+    tag_positions.append_set_dimension()
+
+    tag_extents = block.create_data_array("tag extents", "nix.event.extents", nix.DataType.Float, (1, 1))
+    tag_extents.append_set_dimension()
+
+    tags = block.create_multi_tag("tags", "nix.event", tag_positions)
+    tags.extents = tag_extents
+    tags.references.append(video_data)
     return nix_file
 
 
