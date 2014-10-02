@@ -9,6 +9,7 @@ import time
 import numpy as np
 from IPython import embed
 
+
 def read_frame_times(filename):
     times_file = filename[:-4] + '_times.dat'
     times = []
@@ -16,7 +17,7 @@ def read_frame_times(filename):
         with open(times_file) as f:
             for l in f.readlines():
                 times.append(float(l.rstrip()[6:]))
-        return times;
+        return times
     else:
         return None
 
@@ -33,14 +34,14 @@ def check_tags(start, end, frame_count):
                 if start[i] > end[i]:
                     start.insert(i, end[i-1])
                 else:
-                    i +=1
+                    i += 1
             else:
-                if i+1 < len(start):
+                if i + 1 < len(start):
                     end.append(start[i+1])
-                    i +=1
+                    i += 1
                 else:
                     end.append(frame_count)
-                    i = i + 1
+                    i += 1
         if len(end) < len(start):
             end.append(frame_count)
     else:
@@ -60,14 +61,13 @@ def check_tags(start, end, frame_count):
         end.append(frame_count)
 
 
-def play_avi(filename, time_scale):
+def export_avi(nix_file, show_gui, speed=1.):
     start_tags = []
     end_tags = []
     frame_times = read_frame_times(filename)
     video = cv2.VideoCapture()
     video.open(filename)
-    begin = time.time()
-    intervals = []
+    intervals = []  
     frames = None
     if frame_times:
         intervals = np.diff(frame_times)*1000.
@@ -85,10 +85,11 @@ def play_avi(filename, time_scale):
     
     while success:
         if k == 0:
-            frames = frame[...,np.newaxis]
+            frames = frame[..., np.newaxis]
         else:
-            frames = np.concatenate((frames, frame[...,np.newaxis]),axis=axis)
+            frames = np.concatenate((frames, frame[..., np.newaxis]), axis=axis)
         start = time.time()
+        write_frame(frame, frame_times[k])
         cv2.imshow('frame', frame)
         if frame_times:
             wait_interval = np.max((1, int((intervals[k] - (time.time() - start) * 1000) * time_scale)))
@@ -121,7 +122,7 @@ def grab_frames(filename):
     frame_times =  []
     frames = None
     video = cv2.VideoCapture(filename)
-    frame_time = 1000//video.get(cv2.cv.CV_CAP_PROP_FPS)
+    frame_time = 1000 // video.get(cv2.cv.CV_CAP_PROP_FPS)
     success, frame = video.read()
     frame_count = 0
     axis = 2
@@ -129,9 +130,9 @@ def grab_frames(filename):
         axis = 3
     while success:
         if frames is None:
-            frames = frame[...,np.newaxis]
+            frames = frame[..., np.newaxis]
         else:
-            frames = np.concatenate((frames, frame[...,np.newaxis]),axis=axis)
+            frames = np.concatenate((frames, frame[..., np.newaxis]), axis=axis)
         frame_times.append(frame_count * frame_time)
         frame_count += 1
         success, frame = video.read()
@@ -237,18 +238,29 @@ def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
 def nix_export(file_name, start_tags, end_tags, frame_times, frames) :
     nix_file = create_nix_file(file_name)
     save_frames(nix_file, frames, frame_times)
-    save_tags(nix_file, start_tags, end_tags, frame_times)
+    save_tags(nix_file, start_tags, end_tags, frame_times) #TODO
     if nix_file:
-        nix_file.close()
+        nix_file.close() #TODO
+
+
+def get_frame_dimensions(filename):
+    video = cv2.VideoCapture(filename)
+    success, frame = video.read()
+    video.release()
+    return frame.shape
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy avi to nix converter with tagging option')
-    parser.add_argument('file', type=str, help="filename of the file-to-convert")
-    parser.add_argument('-g', '--gui', action="store_true", help="with video playback with the option to tag selections")
-    parser.add_argument('-o', '--output', type=str, default=None, help="specifies the name of the output file")
-    parser.add_argument('-s','--speed', type=float, default=1.,
-                        help="playback speed given as a scaling of the original frame timing e.g. 2.0 for double (slow motion), 0.5 for half etc.")
+    parser.add_argument('file', type=str,
+                        help="filename of the file-to-convert")
+    parser.add_argument('-g', '--gui', action="store_true",
+                        help="with video playback with the option to tag selections")
+    parser.add_argument('-o', '--output', type=str, default=None,
+                        help="specifies the name of the output file")
+    parser.add_argument('-s', '--speed', type=float, default=1.,
+                        help="playback speed given as a scaling of the original frame timing e.g. 2.0 "
+                             "for double (slow motion), 0.5 for half etc.")
     args = parser.parse_args()
 
     if not os.path.exists(args.file):
@@ -263,11 +275,12 @@ if __name__ == '__main__':
         elif ans == 'n':
             output_name = raw_input('Please give a new file name: ')
             if '/' in output_name or '\\' in output_name:
-                print ('TODO: make sure the path exists!')
+                print('TODO: make sure the path exists!')
 
-    if args.gui:
-        start_tags, end_tags, frame_times, frames = play_avi(args.file, args.speed)
-    else:
-        start_tags, end_tags, frame_times, frames = grab_frames(args.file)
-    nix_export(output_name, start_tags, end_tags, frame_times, frames)
+    frame_size = get_frame_dimensions(args.file)
+
+    nix_file = create_nix_file(output_name, frame_size=frame_size)
+    export_avi(nix_file, args.gui, args.speed)
+
+
 
