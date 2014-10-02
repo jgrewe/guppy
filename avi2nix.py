@@ -183,7 +183,7 @@ def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
         raise ValueError('start_tags and end_tags do not have the same number of entries!')
 
     if tag_rois and tag_rois.shape[-1] != len(end_tags):
-        raise ValueError('There are ROIs than there are tags!')
+        raise ValueError('Number of ROIs does not match the number of tags!')
     block = nix_file.blocks[0]
     tags = block.multi_tags[0]
     video_size = tags.references[0].data_extent
