@@ -116,31 +116,6 @@ def export_avi(filename, nix_file, show_gui, speed=1.):
     #save_tags(nix_file, start_tags, end_tags, frame_times)
 
 
-def grab_frames(filename):
-    start_tags = [0]
-    end_tags = []
-    frame_times =  []
-    frames = None
-    video = cv2.VideoCapture(filename)
-    frame_time = 1000 // video.get(cv2.cv.CV_CAP_PROP_FPS)
-    success, frame = video.read()
-    frame_count = 0
-    axis = 2
-    if success and frame.shape[-1] == 3:
-        axis = 3
-    while success:
-        if frames is None:
-            frames = frame[..., np.newaxis]
-        else:
-            frames = np.concatenate((frames, frame[..., np.newaxis]), axis=axis)
-        frame_times.append(frame_count * frame_time)
-        frame_count += 1
-        success, frame = video.read()
-    video.release()
-    end_tags = [frame_count]
-    return start_tags, end_tags, frame_times, frames
-
-
 def create_nix_file(file_name, frame_size, data_type="nix.stamped_video"):
     nix_file = nix.File.open(file_name, nix.FileMode.Overwrite)
     block_name = file_name.split('/')[-1].split('.')[-2]
