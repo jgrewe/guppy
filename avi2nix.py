@@ -212,14 +212,6 @@ def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
     tags.extents.data.write_direct(extent_data)
 
 
-def nix_export(file_name, start_tags, end_tags, frame_times, frames) :
-    nix_file = create_nix_file(file_name)
-    save_frames(nix_file, frames, frame_times)
-    #save_tags(nix_file, start_tags, end_tags, frame_times) #TODO
-    if nix_file:
-        nix_file.close() #TODO
-
-
 def get_frame_dimensions(filename):
     video = cv2.VideoCapture(filename)
     success, frame = video.read()
