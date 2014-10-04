@@ -61,59 +61,59 @@ def check_tags(start, end, frame_count):
         end.append(frame_count)
 
 
-def export_avi(nix_file, show_gui, speed=1.):
+def export_avi(filename, nix_file, show_gui, speed=1.):
     start_tags = []
     end_tags = []
-    frame_times = read_frame_times(filename)
+    intervals = []  
+    frame_times = []  
+    frame_time = 0.0
+    temp_times = read_frame_times(filename)
     video = cv2.VideoCapture()
     video.open(filename)
-    intervals = []  
-    frames = None
-    if frame_times:
-        intervals = np.diff(frame_times)*1000.
+
+    if temp_times is not None:
+        intervals = np.diff(temp_times)*1000.
         intervals = np.hstack((intervals, np.mean(intervals)))
+        frame_times = np.asarray(temp_times) * 1000
     else:
         intervals.append(1000//video.get(cv2.cv.CV_CAP_PROP_FPS))
+
     success, frame = video.read()
     axis = 2
     if success and frame.shape[-1] == 3:
         axis = 3
     k = 0
-    ret_times = []
-    if frame_times is not None:
-        ret_times = np.asarray(frame_times)*1000
-    
     while success:
-        if k == 0:
-            frames = frame[..., np.newaxis]
-        else:
-            frames = np.concatenate((frames, frame[..., np.newaxis]), axis=axis)
         start = time.time()
-        write_frame(frame, frame_times[k])
-        cv2.imshow('frame', frame)
-        if frame_times:
-            wait_interval = np.max((1, int((intervals[k] - (time.time() - start) * 1000) * time_scale)))
+        if temp_times is not None:
+            frame_time = frame_times[k]
         else:
-            wait_interval = np.max((1, int((intervals[0] - (time.time() - start) * 1000) * time_scale)))
-        # print(str(intervals[k]) + ' ' + str(wait_interval) + ' ' + str (time_scale) )
-        key = cv2.waitKey(wait_interval)
-        if key & 0xFF == ord('q'):
-            break
-        elif key & 0xFF == ord('s'):
-            start_tags.append(k)
-        elif key & 0xFF == ord('e'):
-            end_tags.append(k)
+            frame_time = k * intervals[0]
+        write_frame(nix_file, frame, frame_times[k], k)
+        if show_gui:
+            cv2.imshow('frame', frame)
+            if frame_times is not None:
+                wait_interval = np.max((1, int((intervals[k] - (time.time() - start) * 1000) * speed)))
+            else:
+                wait_interval = np.max((1, int((intervals[0] - (time.time() - start) * 1000) * speed)))
+            key = cv2.waitKey(wait_interval)
+            if key & 0xFF == ord('q'):
+                break
+            elif key & 0xFF == ord('s'):
+                start_tags.append(k)
+            elif key & 0xFF == ord('e'):
+                end_tags.append(k)
         k+=1
         success, frame = video.read()
     
-    if frame_times is None:
-        ret_times = np.arange(0, k+1)*intervals[0]
+    if temp_times is None:
+        frame_times = np.arange(0, k+1)*intervals[0]
     else:
-        ret_times = ret_times[0:k+1]
+        frame_times = frame_times[0:k+1]
     video.release()
     cv2.destroyAllWindows()
     check_tags(start_tags, end_tags, k)
-    return start_tags, end_tags, ret_times, frames
+    #save_tags(nix_file, start_tags, end_tags, frame_times)
 
 
 def grab_frames(filename):
@@ -145,8 +145,8 @@ def create_nix_file(file_name, frame_size, data_type="nix.stamped_video"):
     nix_file = nix.File.open(file_name, nix.FileMode.Overwrite)
     block_name = file_name.split('/')[-1].split('.')[-2]
     block = nix_file.create_block(block_name, 'recording')
-
-    video_data = block.create_data_array("video", data_type, nix.DataType.UInt8, frame_size)
+    shape = tuple(list(frame_size)+[1])
+    video_data = block.create_data_array("video", data_type, nix.DataType.UInt8, shape)
     sd = video_data.append_sampled_dimension(1.0)
     sd.label = "width"
     sd = video_data.append_sampled_dimension(1.0)
@@ -204,6 +204,25 @@ def save_frames(nix_file, frames, frame_times):
     tags.references.append(video_data)
 
 
+def write_frame(nix_file, frame, frame_time, frame_number):
+    block = nix_file.blocks[0]
+    video_array = None
+    for d_a in block.data_arrays:
+        if d_a.type == 'nix.stamped_video':
+            video_array = d_a
+            break;
+    if frame_number == 0:
+        video_array.data.write_direct(frame)
+    else:
+        old_shape = list(video_array.data_extent)
+        old_shape[-1] += 1
+        video_array.data_extent = tuple(old_shape)
+        offset = [0] * len(old_shape)
+        offset[-1] = frame_number
+        temp = frame[..., np.newaxis]
+        video_array.data.write_data(temp, temp.shape, tuple(offset))
+
+
 def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
     if len(start_tags) != len(end_tags):
         raise ValueError('start_tags and end_tags do not have the same number of entries!')
@@ -238,7 +257,7 @@ def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
 def nix_export(file_name, start_tags, end_tags, frame_times, frames) :
     nix_file = create_nix_file(file_name)
     save_frames(nix_file, frames, frame_times)
-    save_tags(nix_file, start_tags, end_tags, frame_times) #TODO
+    #save_tags(nix_file, start_tags, end_tags, frame_times) #TODO
     if nix_file:
         nix_file.close() #TODO
 
@@ -280,7 +299,7 @@ if __name__ == '__main__':
     frame_size = get_frame_dimensions(args.file)
 
     nix_file = create_nix_file(output_name, frame_size=frame_size)
-    export_avi(nix_file, args.gui, args.speed)
+    export_avi(args.file, nix_file, args.gui, args.speed)
 
 
 
