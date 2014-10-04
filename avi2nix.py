@@ -114,7 +114,7 @@ def export_avi(filename, nix_file, show_gui, speed=1.):
     cv2.destroyAllWindows()
     write_frame_times(nix_file, frame_times)
     check_tags(start_tags, end_tags, k)
-    #save_tags(nix_file, start_tags, end_tags, frame_times)
+    save_tags(nix_file, start_tags, end_tags, frame_times)
 
 
 def create_nix_file(file_name, frame_size, data_type="nix.stamped_video"):
@@ -181,7 +181,7 @@ def write_frame_times(nix_file, frame_times):
     time_dim.ticks = frame_times
 
 
-def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
+def save_tags(nix_file, start_tags, end_tags, frame_times, tag_rois=None):
     if len(start_tags) != len(end_tags):
         raise ValueError('start_tags and end_tags do not have the same number of entries!')
 
