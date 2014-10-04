@@ -89,7 +89,7 @@ def export_avi(filename, nix_file, show_gui, speed=1.):
             frame_time = frame_times[k]
         else:
             frame_time = k * intervals[0]
-        write_frame(nix_file, frame, frame_times[k], k)
+        write_frame(nix_file, frame, k)
         if show_gui:
             cv2.imshow('frame', frame)
             if frame_times is not None:
@@ -112,6 +112,7 @@ def export_avi(filename, nix_file, show_gui, speed=1.):
         frame_times = frame_times[0:k+1]
     video.release()
     cv2.destroyAllWindows()
+    write_frame_times(nix_file, frame_times)
     check_tags(start_tags, end_tags, k)
     #save_tags(nix_file, start_tags, end_tags, frame_times)
 
@@ -148,7 +149,7 @@ def create_nix_file(file_name, frame_size, data_type="nix.stamped_video"):
     return nix_file
 
 
-def write_frame(nix_file, frame, frame_time, frame_number):
+def write_frame(nix_file, frame, frame_number):
     block = nix_file.blocks[0]
     video_array = None
     for d_a in block.data_arrays:
@@ -165,6 +166,19 @@ def write_frame(nix_file, frame, frame_time, frame_number):
         offset[-1] = frame_number
         temp = frame[..., np.newaxis]
         video_array.data.write_data(temp, temp.shape, tuple(offset))
+
+
+def write_frame_times(nix_file, frame_times):
+    block = nix_file.blocks[0]
+    video_array = None
+    for d_a in block.data_arrays:
+        if d_a.type == 'nix.stamped_video':
+            video_array = d_a
+            break;
+    time_dim = video_array.dimensions[-1]
+    if not isinstance(time_dim, nix.RangeDimension):
+        raise ValueError("could not find the time dimension!")
+    time_dim.ticks = frame_times
 
 
 def save_tags(nix_file, start_tags, end_tags, frames_times, tag_rois=None):
