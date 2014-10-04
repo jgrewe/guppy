@@ -148,37 +148,6 @@ def create_nix_file(file_name, frame_size, data_type="nix.stamped_video"):
     return nix_file
 
 
-def save_frames(nix_file, frames, frame_times):
-    data_type = "nix.stamped_video_monochrom"
-    if frames[0].shape[-2]  == 3:
-        data_type = "nix.stamped_video_RGB"
-    block = nix_file.blocks[0]
-
-    video_data = block.create_data_array("video", data_type, nix.DataType.UInt8,  frames.shape)
-    sd = video_data.append_sampled_dimension(1.0)
-    sd.label = "height"
-    sd = video_data.append_sampled_dimension(1.0)
-    sd.label= "width"
-    if  frames.shape[-2] == 3:
-        dim = video_data.append_set_dimension()
-        dim.labels = ["R", "G", "B"]
-
-    time_dim = video_data.append_range_dimension(frame_times)
-    time_dim.label = "time"
-    time_dim.unit = "ms"
-
-    video_data.data.write_direct(frames)
-    tag_positions = block.create_data_array("tag times", "nix.event.positions", nix.DataType.Float, (1, 1))
-    tag_positions.append_set_dimension()
-
-    tag_extents = block.create_data_array("tag extents", "nix.event.extents", nix.DataType.Float, (1, 1))
-    tag_extents.append_set_dimension()
-
-    tags = block.create_multi_tag("tags", "nix.event", tag_positions)
-    tags.extents = tag_extents
-    tags.references.append(video_data)
-
-
 def write_frame(nix_file, frame, frame_time, frame_number):
     block = nix_file.blocks[0]
     video_array = None
