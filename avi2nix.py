@@ -165,7 +165,7 @@ def write_frame(nix_file, frame, frame_number):
         offset = [0] * len(old_shape)
         offset[-1] = frame_number
         temp = frame[..., np.newaxis]
-        video_array.data.write_data(temp, temp.shape, tuple(offset))
+        video_array.data[:,:,:,frame_number] = temp
 
 
 def write_frame_times(nix_file, frame_times):
