@@ -218,6 +218,11 @@ def get_frame_dimensions(filename):
     video.release()
     return frame.shape
 
+def create_filename(old_name):
+    directory = '/'.join(old_name.split('/')[:-2])
+    new_file = old_name.split('/')[-1] + '.h5'
+    return directory + '/' + new_file
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='guppy avi to nix converter with tagging option')
@@ -235,7 +240,7 @@ if __name__ == '__main__':
     if not os.path.exists(args.file):
         print('File does not exits!')
         exit()
-    output_name = arg.output if args.output else args.file.split('.')[-2] + '.h5'
+    output_name = args.output if args.output else create_filename(args.file)
     if os.path.exists(output_name):
         ans = raw_input('Output file %s already exists! Overwrite? ([y]/n/c): ' % output_name)
         if ans == 'c':
@@ -247,7 +252,6 @@ if __name__ == '__main__':
                 print('TODO: make sure the path exists!')
 
     frame_size = get_frame_dimensions(args.file)
-
     nix_file = create_nix_file(output_name, frame_size=frame_size)
     export_avi(args.file, nix_file, args.gui, args.speed)
 
