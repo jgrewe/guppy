@@ -157,7 +157,7 @@ def write_frame(nix_file, frame, frame_number):
             video_array = d_a
             break;
     if frame_number == 0:
-        video_array.data.write_direct(frame)
+        video_array[:] = frame
     else:
         old_shape = list(video_array.data_extent)
         old_shape[-1] += 1
@@ -165,7 +165,7 @@ def write_frame(nix_file, frame, frame_number):
         offset = [0] * len(old_shape)
         offset[-1] = frame_number
         temp = frame[..., np.newaxis]
-        video_array.data[:,:,:,frame_number] = temp
+        video_array[:,:,:,frame_number] = temp
 
 
 def write_frame_times(nix_file, frame_times):
@@ -200,6 +200,9 @@ def save_tags(nix_file, start_tags, end_tags, frame_times, tag_rois=None):
 
     for i, s_t in enumerate(start_tags):
         position_data[len(video_size) - 1][i] = frame_times[s_t]
+
+    if end_tags[-1] >= len(frame_times):
+        end_tags[-1] = len(frame_times)-1
 
     for i, (s_t, e_t) in enumerate(zip(start_tags, end_tags)):
         for j, siz in enumerate(tag_rois[:, i]):
