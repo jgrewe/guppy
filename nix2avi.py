@@ -10,16 +10,10 @@ from IPython import embed
 
 
 def write_selections(tag, output_name):
-    pos = tag.positions.data
-    extents = tag.extents.data
-    pos_data = np.empty(pos.shape)
-    pos.read_direct(pos_data)
-    extent_data = np.empty(extents.shape)
-    extents.read_direct(extent_data) 
+    pos_data = tag.positions[:]
+    extent_data = extents[:]
     frame_array = tag.references[0]
-    frame_data = frame_array.data 
-    frames = np.empty(frame_data.shape)
-    frame_data.read_direct(frames)
+    frame_data = frame_array[:]
     frame_times = np.asarray(frame_array.dimensions[-1].ticks)
     frame_rate = 1000/np.mean(np.diff(frame_times))
 
