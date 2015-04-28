@@ -1,5 +1,5 @@
 #include "../include/movieWriter.hpp"
-
+#include <boost/multi_array.hpp>
 using namespace std;
 using namespace boost;
 using namespace cv;
@@ -29,7 +29,7 @@ movieWriter::movieWriter(bool nix_io, const string &tagging_type, int movie_coun
 
 
 void movieWriter::create(bool nix_io, const string &tagging_type, int movie_count, const Size &image_size, int channel_count) {
-  if ( isOpen()){
+  if (isOpen()){
     close();
   }
   use_nix = nix_io;
@@ -150,9 +150,10 @@ void movieWriter::writeFrameTimes() {
 
 void movieWriter::writeTagTimes() {
   NDSize data_extent = {static_cast<int>( frame_size.size()), static_cast<int>( tag_times.size())};
-  typedef multi_array<int, 2> array_type;
-  array_type position_data(extents[ frame_size.size()][ tag_times.size()]);
-  array_type extent_data(extents[ frame_size.size()][ tag_times.size()]);
+  const unsigned long rank = 2;
+  typedef multi_array<int, rank> array_type;
+  array_type position_data(extents[frame_size.size()][ tag_times.size()]);
+  array_type extent_data(extents[frame_size.size()][ tag_times.size()]);
 
   for (size_t i = 0; i !=  tag_times.size(); ++i) {
     position_data[ channel_index][i] =  tag_times[i];
@@ -164,9 +165,9 @@ void movieWriter::writeTagTimes() {
     extent_data[ channel_index][i] = 1;
   }
   tag_positions.dataExtent(data_extent);
-  tag_positions.setData(position_data, {0, 0});
+  tag_positions.setDataDirect(nix::DataType::Int64, position_data.origin(), {frame_size.size(), tag_times.size()}, {0,0});
   tag_extents.dataExtent(data_extent);
-  tag_extents.setData(extent_data,{0, 0});
+  tag_extents.setData(nix::DataType::Int64, extent_data.origin(), {frame_size.size(), tag_times.size()}, {0,0});
 }
 
 
