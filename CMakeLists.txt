@@ -17,7 +17,7 @@ set(LINK_LIBS ${LINK_LIBS} ${OpenCV_LIBRARIES})
 
 ##########  BOOST  ##########
 set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_MULTITHREADED OFF)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.49.0 REQUIRED date_time program_options filesystem system)
 set (LINK_LIBS ${LINK_LIBS} ${Boost_LIBRARIES})
